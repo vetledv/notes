@@ -23,8 +23,23 @@ export const notesRouter = createProtectedRouter()
         data: {
           userId: ctx.session.user.id,
           createdAt: new Date(),
-          updatedAt: new Date(),
+          status: 'IN_PROGRESS',
           ...input,
+        },
+      })
+    },
+  })
+  .mutation('trash', {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ ctx, input }) {
+      return await ctx.prisma.note.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          status: 'TRASHED',
         },
       })
     },
@@ -37,6 +52,16 @@ export const notesRouter = createProtectedRouter()
       return await ctx.prisma.note.delete({
         where: {
           id: input.id,
+        },
+      })
+    },
+  })
+  .mutation('deleteAllTrash', {
+    async resolve({ ctx }) {
+      return await ctx.prisma.note.deleteMany({
+        where: {
+          userId: ctx.session.user.id,
+          status: 'TRASHED',
         },
       })
     },

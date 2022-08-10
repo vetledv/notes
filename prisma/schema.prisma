@@ -67,10 +67,14 @@ model Note {
   title       String
   description String?
   color       String
+  status      Status
   createdAt   DateTime
-  updatedAt   DateTime
   completedAt DateTime?
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+enum Status {
+  IN_PROGRESS
+  TRASHED
+}

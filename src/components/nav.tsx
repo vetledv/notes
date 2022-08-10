@@ -32,7 +32,7 @@ const SignInOrOut: React.FC = () => {
 export const Nav = () => {
   const session = useSession()
   return (
-    <nav className='bg-slate-100 p-4 border-b sticky inset-0'>
+    <nav className='bg-slate-100 p-4 border-b sticky inset-0 z-50'>
       <div className='flex gap-4 items-center'>
         {session.data?.user?.image ? (
           <div className='w-12 h-12 rounded-full overflow-hidden border-2 border-pink-400'>
