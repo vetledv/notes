@@ -8,8 +8,7 @@ const Layout: React.FC<Props> = ({ children }) => {
   return (
     <>
       <Nav />
-
-      <main className='container mx-auto flex flex-col min-h-screen p-4'>{children}</main>
+      <main className='w-full flex flex-col min-h-screen'>{children}</main>
     </>
   )
 }
