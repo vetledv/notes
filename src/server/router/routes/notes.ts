@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { createProtectedRouter } from './protected-router'
+import { createProtectedRouter } from '../protected-router'
 
 export const notesRouter = createProtectedRouter()
   .query('getAll', {
@@ -16,17 +16,18 @@ export const notesRouter = createProtectedRouter()
   })
   .mutation('create', {
     input: z.object({
-      title: z.string(),
-      description: z.string().nullish(),
-      color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/),
+      title: z.string().optional(),
+      description: z.string().nullish().optional(),
+      color: z
+        .string()
+        .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
+        .optional(),
     }),
 
     async resolve({ ctx, input }) {
       return await ctx.prisma.note.create({
         data: {
           userId: ctx.session.user.id,
-          createdAt: new Date(),
-          status: 'IN_PROGRESS',
           ...input,
         },
       })
@@ -43,7 +44,6 @@ export const notesRouter = createProtectedRouter()
         },
         data: {
           status: 'TRASHED',
-          updatedAt: new Date(),
         },
       })
     },

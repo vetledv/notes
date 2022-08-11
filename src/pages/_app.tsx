@@ -14,7 +14,7 @@ const MyApp: AppType = ({ Component, pageProps: { session, ...pageProps } }) => 
       <Layout>
         <Component {...pageProps} />
       </Layout>
-      <ReactQueryDevtools initialIsOpen={false} />
+      <ReactQueryDevtools initialIsOpen={false} position='bottom-right' />
     </SessionProvider>
   )
 }

@@ -12,10 +12,6 @@ datasource db {
   referentialIntegrity = "prisma"
 }
 
-model Example {
-  id String @id @default(cuid())
-}
-
 // Necessary for Next auth
 model Account {
   id                String  @id @default(cuid())
@@ -64,14 +60,15 @@ model VerificationToken {
 
 model Note {
   id          String    @id @default(cuid())
-  title       String
+  title       String?
   description String?
-  color       String
-  status      Status
-  createdAt   DateTime
-  updatedAt   DateTime?
+  color       String    @default("#D8E2DC")
+  status      Status    @default(IN_PROGRESS)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
 }
 
 enum Status {

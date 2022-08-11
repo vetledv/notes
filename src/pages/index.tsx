@@ -1,22 +1,19 @@
+import type { Note } from '@prisma/client'
+import clsx from 'clsx'
 import type { NextPage } from 'next'
-import { signIn, useSession } from 'next-auth/react'
-import dynamic from 'next/dynamic'
+import { signIn, signOut, useSession } from 'next-auth/react'
 import Head from 'next/head'
 import { useRef, useState } from 'react'
-import { BiSearchAlt } from 'react-icons/bi'
+import { BiMenuAltLeft, BiSearchAlt } from 'react-icons/bi'
 import { FaDiscord, FaTrash } from 'react-icons/fa'
-import { TbEdit } from 'react-icons/tb'
+import { MdLogout } from 'react-icons/md'
+import { TbEdit, TbNotes } from 'react-icons/tb'
 import AutoAnimate from '../components/auto-animate'
 import { Button } from '../components/button'
-import { Nav } from '../components/nav'
-import { inferQueryOutput, trpc } from '../utils/trpc'
+import NoteTile from '../components/note-tile'
+import { trpc } from '../utils/trpc'
+import { HiOutlineTrash } from 'react-icons/hi'
 
-enum Status {
-  TRASHED = 'TRASHED',
-  IN_PROGRESS = 'IN_PROGRESS',
-}
-
-type Note = inferQueryOutput<'notes.getAll'>[0]
 interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
   as?: string
   note: Note
@@ -38,37 +35,6 @@ const Login = () => {
           Log in with Discord
           <FaDiscord className='h-6 w-6' />
         </Button>
-      </div>
-    </div>
-  )
-}
-
-const NoteTile: React.FC<NoteProps> = ({ note, ...props }) => {
-  const tctx = trpc.useContext()
-  /**
-   * @link https://stackoverflow.com/a/3943023
-   */
-  const calculateTextColor = () => {
-    const red = parseInt(note.color.slice(1, 3), 16) / 255
-    const green = parseInt(note.color.slice(3, 5), 16) / 255
-    const blue = parseInt(note.color.slice(5, 7), 16) / 255
-    const brightness = (red * 299 + green * 587 + blue * 114) / 1000
-    return brightness > 0.5 ? '#000' : '#fff'
-  }
-  // const [title, setTitle] = useState(note.title)
-  // const [color, setColor] = useState(note.color)
-
-  return (
-    <div key={note.id} {...props} className='hover:bg-slate-100 border-b h-fit cursor-pointer flex'>
-      <div
-        className='h-full w-2'
-        style={{
-          backgroundColor: note.color,
-        }}
-      />
-      <div>
-        <div className='p-2 font-semibold'>{note.title}</div>
-        <div className='p-2 font-thin'>{note.description}</div>
       </div>
     </div>
   )
@@ -96,25 +62,26 @@ const HomeContent: React.FC = () => {
   const { mutate: trashNote } = trpc.useMutation(['notes.trash'], {
     onMutate: ({ id }) => {
       tctx.setQueryData(['notes.getAll'], (oldData) =>
-        oldData!.map((n) => (n.id === id ? { ...n, status: Status.TRASHED } : n))
+        oldData!.map((n) => (n.id === id ? { ...n, status: 'TRASHED' } : n))
       )
     },
   })
   const { mutate: emptyTrash } = trpc.useMutation(['notes.deleteAllTrash'], {
     onMutate: () => {
-      tctx.setQueryData(['notes.getAll'], (oldData) => oldData!.filter((n) => n.status !== Status.TRASHED))
+      tctx.setQueryData(['notes.getAll'], (oldData) => oldData!.filter((n) => n.status !== 'TRASHED'))
     },
   })
 
   const [isNoteOpen, setIsNoteOpen] = useState<string | null>(null)
   const [isTrashOpen, setIsTrashOpen] = useState(false)
+  const [sideNavOpen, setSideNavOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const handleCreateTodo = () => {
     createTodo({
       title: 'New Todo',
       description: 'This is another new todo',
-      color: '#063F4B',
+      color: '#9BA2FF',
     })
   }
 
@@ -123,30 +90,67 @@ const HomeContent: React.FC = () => {
 
   return (
     <div className='flex overflow-hidden h-screen'>
-      <div className='h-full flex flex-col w-full z-30 md:max-w-xs lg:max-w-sm md:min-w-[320px] lg:min-w-[384px] md:w-80 lg:w-96 md:border-r'>
-        <nav className='bg-white'>
-          <Nav />
-          <div className='border-b p-2 flex justify-between items-center'>
-            <Button onClick={() => setIsTrashOpen(!isTrashOpen)}>{isTrashOpen ? <div>asd</div> : <FaTrash />}</Button>
-            {isTrashOpen ? <div>Trash</div> : <div>My notes</div>}
-            <Button className='bg-transparent' onClick={handleCreateTodo}>
-              <TbEdit className='w-6 h-6' />
+      {/**
+       * Side Nav
+       */}
+      <div className={clsx(sideNavOpen ? 'w-64' : ' w-0', 'h-full min-w-fit flex flex-col border-r transition-width')}>
+        <Button
+          onClick={() => setSideNavOpen(!sideNavOpen)}
+          className='px-2 py-4 border-b rounded-none hover:bg-slate-100'>
+          <BiMenuAltLeft className='w-6 h-6' />
+        </Button>
+        <div className='flex flex-col w-full h-full justify-between'>
+          <div>
+            <Button
+              onClick={() => setIsTrashOpen(false)}
+              className='rounded-none w-full flex px-2 gap-2 justify-start items-center hover:bg-slate-100 border-b'>
+              <TbNotes className='w-6 h-6' />
+              {sideNavOpen && <span>All Notes</span>}
+            </Button>
+            <Button
+              onClick={() => setIsTrashOpen(true)}
+              className='rounded-none w-full flex px-2 gap-2 justify-start items-center hover:bg-slate-100 border-b'>
+              <HiOutlineTrash className='w-6 h-6' />
+              {sideNavOpen && <span>Trash</span>}
             </Button>
           </div>
-          <span onClick={() => searchRef.current?.focus()} className='relative  cursor-text '>
-            <BiSearchAlt className='w-6 h-6 absolute my-auto inset-y-0 left-4' />
-            <input
-              ref={searchRef}
-              className='pl-12 pr-4 py-3 border-b w-full outline-none'
-              placeholder='Search notes'></input>
-          </span>
-        </nav>
+          <div>
+            <Button
+              className='cursor-pointer w-full flex items-center gap-2 py-2 px-2 hover:bg-slate-100'
+              onClick={() => {
+                signOut()
+              }}>
+              <MdLogout className='w-6 h-6' />
+              {sideNavOpen && <span>Log Out</span>}
+            </Button>
+            {sideNavOpen && <p className='p-2'>Made by dvries </p>}
+          </div>
+        </div>
+      </div>
+      {/**
+       * Main Content Nav
+       */}
+      <div className='h-full flex flex-col w-full z-30 md:max-w-xs lg:max-w-sm md:min-w-[320px] lg:min-w-[384px] md:w-80 lg:w-96 md:border-r'>
+        <div className='border-b p-2 flex justify-between items-center'>
+          <div className='w-10 p-2'></div>
+          {isTrashOpen ? <div>Trash</div> : <div>My notes</div>}
+          <Button className='bg-transparent w-fit px-2 py-2' onClick={handleCreateTodo}>
+            <TbEdit className='w-6 h-6' />
+          </Button>
+        </div>
+        <span onClick={() => searchRef.current?.focus()} className='relative cursor-text'>
+          <BiSearchAlt className='w-6 h-6 absolute my-auto inset-y-0 left-4' />
+          <input
+            ref={searchRef}
+            className='pl-12 pr-4 py-3 border-b w-full outline-none'
+            placeholder='Search notes'></input>
+        </span>
 
         {notes.data ? (
           <AutoAnimate className='flex flex-col w-full h-full max-h-full overflow-y-auto'>
             {!isTrashOpen ? (
               notes.data
-                .filter((note) => note.status !== Status.TRASHED)
+                .filter((note) => note.status === 'IN_PROGRESS')
                 .map((note) => (
                   <NoteTile
                     key={note.id}
@@ -159,7 +163,7 @@ const HomeContent: React.FC = () => {
             ) : (
               <>
                 {notes.data
-                  .filter((note) => note.status === Status.TRASHED)
+                  .filter((note) => note.status === 'TRASHED')
                   .map((note) => (
                     <NoteTile
                       key={note.id}
@@ -182,6 +186,9 @@ const HomeContent: React.FC = () => {
           </Button>
         )}
       </div>
+      {/**
+       * Editor
+       */}
       {isNoteOpen && (
         <div className='flex flex-col w-full absolute md:relative inset-0 bg-white z-50'>
           <div className='flex justify-between p-2 border-b bg-white'>
