@@ -1,16 +1,15 @@
-import clsx from 'clsx'
 import type { NextPage } from 'next'
 import { signIn, useSession } from 'next-auth/react'
+import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useRef, useState } from 'react'
+import { BiSearchAlt } from 'react-icons/bi'
 import { FaDiscord, FaTrash } from 'react-icons/fa'
 import { TbEdit } from 'react-icons/tb'
 import AutoAnimate from '../components/auto-animate'
 import { Button } from '../components/button'
+import { Nav } from '../components/nav'
 import { inferQueryOutput, trpc } from '../utils/trpc'
-import { BiSearchAlt } from 'react-icons/bi'
-import { FiMoreVertical } from 'react-icons/fi'
-import dynamic from 'next/dynamic'
 
 enum Status {
   TRASHED = 'TRASHED',
@@ -18,10 +17,30 @@ enum Status {
 }
 
 type Note = inferQueryOutput<'notes.getAll'>[0]
-
 interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
   as?: string
   note: Note
+}
+
+const Login = () => {
+  return (
+    <div className='flex flex-col h-screen items-center gap-4 justify-center'>
+      <div className='flex flex-col gap-4'>
+        <div>
+          <div className='text-7xl font-bold border-b w-fit'>Notes.</div>
+          <div className='text-2xl font-bold border-b w-fit'>That&apos;s it. Just your notes.</div>
+        </div>
+        <Button
+          onClick={() => {
+            signIn('discord')
+          }}
+          className='flex text-lg gap-2 w-fit py-4 justify-center items-center bg-[#37393e] text-[#dcddde]'>
+          Log in with Discord
+          <FaDiscord className='h-6 w-6' />
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 const NoteTile: React.FC<NoteProps> = ({ note, ...props }) => {
@@ -36,28 +55,37 @@ const NoteTile: React.FC<NoteProps> = ({ note, ...props }) => {
     const brightness = (red * 299 + green * 587 + blue * 114) / 1000
     return brightness > 0.5 ? '#000' : '#fff'
   }
-  const [title, setTitle] = useState(note.title)
-  const [color, setColor] = useState(note.color)
+  // const [title, setTitle] = useState(note.title)
+  // const [color, setColor] = useState(note.color)
 
   return (
-    <div key={note.id} {...props} className=' border-b h-fit cursor-pointer'>
-      <div className='p-2 font-semibold'>{note.title}</div>
-      <div className='p-2 font-thin'>{note.description}</div>
+    <div key={note.id} {...props} className='hover:bg-slate-100 border-b h-fit cursor-pointer flex'>
+      <div
+        className='h-full w-2'
+        style={{
+          backgroundColor: note.color,
+        }}
+      />
+      <div>
+        <div className='p-2 font-semibold'>{note.title}</div>
+        <div className='p-2 font-thin'>{note.description}</div>
+      </div>
     </div>
   )
 }
 
 const HomeContent: React.FC = () => {
   const session = useSession()
-
   const tctx = trpc.useContext()
+
   const notes = trpc.useQuery(['notes.getAll'], {
     enabled: !!session.data,
   })
+
   const { mutate: createTodo } = trpc.useMutation(['notes.create'], {
     onSuccess: (data, variables, context) => {
       console.log('createTodo success', data, variables, context)
-      tctx.setQueryData(['notes.getAll'], (prev) => (prev ? [...prev, data] : [data]))
+      tctx.setQueryData(['notes.getAll'], (prev) => (prev ? [data, ...prev] : [data]))
     },
   })
   const { mutate: deleteNote } = trpc.useMutation(['notes.delete'], {
@@ -68,72 +96,54 @@ const HomeContent: React.FC = () => {
   const { mutate: trashNote } = trpc.useMutation(['notes.trash'], {
     onMutate: ({ id }) => {
       tctx.setQueryData(['notes.getAll'], (oldData) =>
-        //find the note with the id and set it to trashed
         oldData!.map((n) => (n.id === id ? { ...n, status: Status.TRASHED } : n))
       )
     },
   })
-
   const { mutate: emptyTrash } = trpc.useMutation(['notes.deleteAllTrash'], {
     onMutate: () => {
       tctx.setQueryData(['notes.getAll'], (oldData) => oldData!.filter((n) => n.status !== Status.TRASHED))
     },
   })
 
-  const [isNoteOpen, setIsOpen] = useState<string | null>(null)
+  const [isNoteOpen, setIsNoteOpen] = useState<string | null>(null)
   const [isTrashOpen, setIsTrashOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const handleCreateTodo = () => {
     createTodo({
-      title: 'Another New Todo',
+      title: 'New Todo',
       description: 'This is another new todo',
       color: '#063F4B',
     })
   }
 
-  if (!session.data) {
-    return (
-      <Button
-        onClick={() => {
-          signIn('discord')
-        }}
-        className='flex gap-2 items-center bg-[#37393e] text-[#dcddde]'>
-        Log in with Discord
-        <FaDiscord className='h-6 w-6' />
-      </Button>
-    )
-  }
-  if (notes.isLoading) {
-    return <div>Loading...</div>
-  }
+  if (!session.data) return <Login />
+  if (notes.isLoading) return <div>Loading...</div>
+
   return (
-    <div className='grid gap-2 md:grid-cols-2 items-start overflow-hidden relative'>
-      <div className={clsx(isNoteOpen && 'hidden', 'md:block', 'bg-pink-300 relative')}>
-        <nav className='relative border-b p-2 flex justify-between items-center'>
-          {isTrashOpen ? (
-            <>
-              <div>Trash</div>
-              <Button onClick={() => setIsTrashOpen(false)}>My notes</Button>
-            </>
-          ) : (
-            <>
-              <div>My notes</div>
-              <Button onClick={() => setIsTrashOpen(true)}>
-                <FaTrash />
-              </Button>
-            </>
-          )}
-          <Button className='bg-transparent' onClick={handleCreateTodo}>
-            <TbEdit className='w-6 h-6' />
-          </Button>
+    <div className='flex overflow-hidden h-screen'>
+      <div className='h-full flex flex-col w-full z-30 md:max-w-xs lg:max-w-sm md:min-w-[320px] lg:min-w-[384px] md:w-80 lg:w-96 md:border-r'>
+        <nav className='bg-white'>
+          <Nav />
+          <div className='border-b p-2 flex justify-between items-center'>
+            <Button onClick={() => setIsTrashOpen(!isTrashOpen)}>{isTrashOpen ? <div>asd</div> : <FaTrash />}</Button>
+            {isTrashOpen ? <div>Trash</div> : <div>My notes</div>}
+            <Button className='bg-transparent' onClick={handleCreateTodo}>
+              <TbEdit className='w-6 h-6' />
+            </Button>
+          </div>
+          <span onClick={() => searchRef.current?.focus()} className='relative  cursor-text '>
+            <BiSearchAlt className='w-6 h-6 absolute my-auto inset-y-0 left-4' />
+            <input
+              ref={searchRef}
+              className='pl-12 pr-4 py-3 border-b w-full outline-none'
+              placeholder='Search notes'></input>
+          </span>
         </nav>
-        <div onClick={() => searchRef.current?.focus()} className='relative bg-red-200 cursor-text '>
-          <BiSearchAlt className='w-6 h-6 absolute my-auto inset-y-0 left-4' />
-          <input ref={searchRef} className='pl-12 pr-4 py-3 border-b w-full' placeholder='Search notes'></input>
-        </div>
+
         {notes.data ? (
-          <AutoAnimate className='grid w-full  h-full max-h-full overflow-y-scroll'>
+          <AutoAnimate className='flex flex-col w-full h-full max-h-full overflow-y-auto'>
             {!isTrashOpen ? (
               notes.data
                 .filter((note) => note.status !== Status.TRASHED)
@@ -142,8 +152,7 @@ const HomeContent: React.FC = () => {
                     key={note.id}
                     note={note}
                     onClick={() => {
-                      setIsOpen(note.id)
-                      console.log('OPENING:', note.id)
+                      setIsNoteOpen(note.id)
                     }}
                   />
                 ))
@@ -156,33 +165,42 @@ const HomeContent: React.FC = () => {
                       key={note.id}
                       note={note}
                       onClick={() => {
-                        setIsOpen(note.id)
+                        setIsNoteOpen(note.id)
                       }}
                     />
                   ))}
-                <Button onClick={()=>emptyTrash()}>Empty Trash</Button>
               </>
             )}
           </AutoAnimate>
         ) : (
           <div>No Notes</div>
         )}
+
+        {isTrashOpen && (
+          <Button className='bg-white rounded-none w-full h-fit mt-auto py-4 border-t' onClick={() => emptyTrash()}>
+            Empty Trash
+          </Button>
+        )}
       </div>
       {isNoteOpen && (
-        <div className='bg-red-200 w-full h-full flex flex-col'>
-          <Button className='w-fit bg-slate-200' onClick={() => setIsOpen(null)}>
-            Close
-          </Button>
-          <Button
-            className='w-fit bg-slate-200'
-            onClick={() => {
-              isTrashOpen ? deleteNote({ id: isNoteOpen }) : trashNote({ id: isNoteOpen })
-              setIsOpen(null)
-            }}>
-            <FaTrash />
-          </Button>
-          <div>{notes.data?.find((note) => note.id === isNoteOpen)?.id}</div>
-          <div contentEditable='true'>{notes.data?.find((note) => note.id === isNoteOpen)?.title}</div>
+        <div className='flex flex-col w-full absolute md:relative inset-0 bg-white z-50'>
+          <div className='flex justify-between p-2 border-b bg-white'>
+            <Button className='w-fit bg-slate-200' onClick={() => setIsNoteOpen(null)}>
+              Close
+            </Button>
+            <Button
+              className='w-fit bg-slate-200'
+              onClick={() => {
+                isTrashOpen ? deleteNote({ id: isNoteOpen }) : trashNote({ id: isNoteOpen })
+                setIsNoteOpen(null)
+              }}>
+              <FaTrash />
+            </Button>
+          </div>
+          <div className='p-2'>
+            <div>{notes.data?.find((note) => note.id === isNoteOpen)?.id}</div>
+            <div>{notes.data?.find((note) => note.id === isNoteOpen)?.title}</div>
+          </div>
         </div>
       )}
     </div>
@@ -190,8 +208,6 @@ const HomeContent: React.FC = () => {
 }
 
 const Home: NextPage = () => {
-  const session = useSession()
-
   return (
     <>
       <Head>

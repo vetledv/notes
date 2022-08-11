@@ -1,9 +1,11 @@
 import { signIn, signOut, useSession } from 'next-auth/react'
 import Image from 'next/future/image'
+import { useState } from 'react'
 import { FaDiscord } from 'react-icons/fa'
+import { MdLogout, MdOutlineMoreVert } from 'react-icons/md'
 import { Button } from './button'
 
-const SignInOrOut: React.FC = () => {
+export const SignInOrOut: React.FC = () => {
   const session = useSession()
   if (session.data) {
     return (
@@ -31,8 +33,9 @@ const SignInOrOut: React.FC = () => {
 
 export const Nav = () => {
   const session = useSession()
+  const [isOpen, setIsOpen] = useState(false)
   return (
-    <nav className='bg-slate-100 p-4 border-b sticky inset-0 z-50'>
+    <nav className='bg-slate-100 border-b sticky p-2 inset-0 z-50'>
       <div className='flex gap-4 items-center'>
         {session.data?.user?.image ? (
           <div className='w-12 h-12 rounded-full overflow-hidden border-2 border-pink-400'>
@@ -40,8 +43,22 @@ export const Nav = () => {
           </div>
         ) : null}
         <div>{session.data?.user?.name}</div>
-        <SignInOrOut />
+        <div className='cursor-pointer p-1 hover:bg-slate-200 rounded-full' onClick={() => setIsOpen(!isOpen)}>
+          <MdOutlineMoreVert className='w-6 h-6' />
+        </div>
       </div>
+      {isOpen && (
+        <div className='absolute top-14 z-50 w-48 p-2 bg-slate-100 shadow-md'>
+          <Button
+            className='w-full cursor-pointer items-center flex justify-center gap-2 hover:bg-slate-200'
+            onClick={() => {
+              signOut()
+            }}>
+            Log Out
+            <MdLogout className="w-6 h-6" />
+          </Button>
+        </div>
+      )}
     </nav>
   )
 }

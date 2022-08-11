@@ -69,7 +69,7 @@ model Note {
   color       String
   status      Status
   createdAt   DateTime
-  completedAt DateTime?
+  updatedAt   DateTime?
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

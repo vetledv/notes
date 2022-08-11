@@ -8,6 +8,9 @@ export const notesRouter = createProtectedRouter()
         where: {
           userId: ctx.session.user.id,
         },
+        orderBy: {
+          updatedAt: 'desc',
+        },
       })
     },
   })
@@ -40,6 +43,7 @@ export const notesRouter = createProtectedRouter()
         },
         data: {
           status: 'TRASHED',
+          updatedAt: new Date(),
         },
       })
     },
