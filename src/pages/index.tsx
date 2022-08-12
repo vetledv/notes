@@ -21,7 +21,7 @@ interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const Login = () => {
   return (
-    <div className='flex flex-col h-screen items-center gap-4 justify-center'>
+    <div className='flex flex-col h-screen items-center gap-4 justify-center testing'>
       <div className='flex flex-col gap-4'>
         <div>
           <div className='text-7xl font-bold border-b w-fit'>Notes.</div>
@@ -142,7 +142,7 @@ const HomeContent: React.FC = () => {
           <BiSearchAlt className='w-6 h-6 absolute my-auto inset-y-0 left-4' />
           <input
             ref={searchRef}
-            className='pl-12 pr-4 py-3 border-b w-full outline-none'
+            className='pl-12 pr-4 py-2 border-b w-full outline-none'
             placeholder='Search notes'></input>
         </span>
 

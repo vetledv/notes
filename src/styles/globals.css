@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.testing {
+  background-image: radial-gradient(#dcdcdc 6%, #fcfcfc 6%);
+  background-position: 0 0;
+  background-size: 24px 24px;
+}

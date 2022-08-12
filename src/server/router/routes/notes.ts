@@ -32,6 +32,25 @@ export const notesRouter = createProtectedRouter()
         },
       })
     },
+  }).mutation('update', {
+    input: z.object({
+      id: z.string().min(1),
+      title: z.string().nullable(),
+      description: z.string().nullable(),
+      color: z
+        .string()
+        .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
+        .optional(),
+    }),
+
+    async resolve({ ctx, input }) {
+      return await ctx.prisma.note.update({
+        where: {
+          id: input.id,
+        },
+        data: input,
+      })
+    },
   })
   .mutation('trash', {
     input: z.object({
