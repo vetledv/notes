@@ -1,43 +1,23 @@
 import type { Note } from '@prisma/client'
 import clsx from 'clsx'
 import type { NextPage } from 'next'
-import { signIn, signOut, useSession } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import Head from 'next/head'
 import { useRef, useState } from 'react'
 import { BiMenuAltLeft, BiSearchAlt } from 'react-icons/bi'
-import { FaDiscord, FaTrash } from 'react-icons/fa'
+import { FaTrash } from 'react-icons/fa'
+import { HiOutlineTrash } from 'react-icons/hi'
 import { MdLogout } from 'react-icons/md'
 import { TbEdit, TbNotes } from 'react-icons/tb'
 import AutoAnimate from '../components/auto-animate'
 import { Button } from '../components/button'
+import Login from '../components/login'
 import NoteTile from '../components/note-tile'
 import { trpc } from '../utils/trpc'
-import { HiOutlineTrash } from 'react-icons/hi'
 
-interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
-  as?: string
+interface EditorProps {
   note: Note
-}
-
-const Login = () => {
-  return (
-    <div className='flex flex-col h-screen items-center gap-4 justify-center testing'>
-      <div className='flex flex-col gap-4'>
-        <div>
-          <div className='text-7xl font-bold border-b w-fit'>Notes.</div>
-          <div className='text-2xl font-bold border-b w-fit'>That&apos;s it. Just your notes.</div>
-        </div>
-        <Button
-          onClick={() => {
-            signIn('discord')
-          }}
-          className='flex text-lg gap-2 w-fit py-4 justify-center items-center bg-[#37393e] text-[#dcddde]'>
-          Log in with Discord
-          <FaDiscord className='h-6 w-6' />
-        </Button>
-      </div>
-    </div>
-  )
+  setOpenNote: (note: Note | null) => void
 }
 
 const HomeContent: React.FC = () => {
@@ -54,25 +34,13 @@ const HomeContent: React.FC = () => {
       tctx.setQueryData(['notes.getAll'], (prev) => (prev ? [data, ...prev] : [data]))
     },
   })
-  const { mutate: deleteNote } = trpc.useMutation(['notes.delete'], {
-    onMutate: ({ id }) => {
-      tctx.setQueryData(['notes.getAll'], (oldData) => oldData!.filter((n) => n.id !== id))
-    },
-  })
-  const { mutate: trashNote } = trpc.useMutation(['notes.trash'], {
-    onMutate: ({ id }) => {
-      tctx.setQueryData(['notes.getAll'], (oldData) =>
-        oldData!.map((n) => (n.id === id ? { ...n, status: 'TRASHED' } : n))
-      )
-    },
-  })
   const { mutate: emptyTrash } = trpc.useMutation(['notes.deleteAllTrash'], {
     onMutate: () => {
       tctx.setQueryData(['notes.getAll'], (oldData) => oldData!.filter((n) => n.status !== 'TRASHED'))
     },
   })
 
-  const [isNoteOpen, setIsNoteOpen] = useState<string | null>(null)
+  const [openNote, setOpenNote] = useState<Note | null>(null)
   const [isTrashOpen, setIsTrashOpen] = useState(false)
   const [sideNavOpen, setSideNavOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -83,6 +51,12 @@ const HomeContent: React.FC = () => {
       description: 'This is another new todo',
       color: '#9BA2FF',
     })
+  }
+
+  const handleOpenNote = (note: Note) => {
+    //stupid fix, states are not updated unless we do this, better solution?
+    setOpenNote(null)
+    setTimeout(() => setOpenNote(note), 1)
   }
 
   if (!session.data) return <Login />
@@ -130,7 +104,7 @@ const HomeContent: React.FC = () => {
       {/**
        * Main Content Nav
        */}
-      <div className='h-full flex flex-col w-full z-30 md:max-w-xs lg:max-w-sm md:min-w-[320px] lg:min-w-[384px] md:w-80 lg:w-96 md:border-r'>
+      <div className='h-full flex flex-col w-full md:max-w-xs lg:max-w-sm md:min-w-[320px] lg:min-w-[384px] md:w-80 lg:w-96 md:border-r relative'>
         <div className='border-b p-2 flex justify-between items-center'>
           <div className='w-10 p-2'></div>
           {isTrashOpen ? <div>Trash</div> : <div>My notes</div>}
@@ -147,32 +121,26 @@ const HomeContent: React.FC = () => {
         </span>
 
         {notes.data ? (
-          <AutoAnimate className='flex flex-col w-full h-full max-h-full overflow-y-auto'>
+          <AutoAnimate className='flex flex-col w-full h-full max-h-full overflow-y-auto relative'>
             {!isTrashOpen ? (
-              notes.data
-                .filter((note) => note.status === 'IN_PROGRESS')
-                .map((note) => (
-                  <NoteTile
-                    key={note.id}
-                    note={note}
-                    onClick={() => {
-                      setIsNoteOpen(note.id)
-                    }}
-                  />
-                ))
+              <>
+                {notes.data.filter((note) => note.status === 'IN_PROGRESS').length > 1 ? (
+                  notes.data
+                    .filter((note) => note.status === 'IN_PROGRESS')
+                    .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
+                ) : (
+                  <div>no notes</div>
+                )}
+              </>
             ) : (
               <>
-                {notes.data
-                  .filter((note) => note.status === 'TRASHED')
-                  .map((note) => (
-                    <NoteTile
-                      key={note.id}
-                      note={note}
-                      onClick={() => {
-                        setIsNoteOpen(note.id)
-                      }}
-                    />
-                  ))}
+                {notes.data.filter((note) => note.status === 'TRASHED').length > 1 ? (
+                  notes.data
+                    .filter((note) => note.status === 'TRASHED')
+                    .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
+                ) : (
+                  <div>trash empty</div>
+                )}
               </>
             )}
           </AutoAnimate>
@@ -189,27 +157,77 @@ const HomeContent: React.FC = () => {
       {/**
        * Editor
        */}
-      {isNoteOpen && (
-        <div className='flex flex-col w-full absolute md:relative inset-0 bg-white z-50'>
-          <div className='flex justify-between p-2 border-b bg-white'>
-            <Button className='w-fit bg-slate-200' onClick={() => setIsNoteOpen(null)}>
-              Close
-            </Button>
-            <Button
-              className='w-fit bg-slate-200'
-              onClick={() => {
-                isTrashOpen ? deleteNote({ id: isNoteOpen }) : trashNote({ id: isNoteOpen })
-                setIsNoteOpen(null)
-              }}>
-              <FaTrash />
-            </Button>
-          </div>
-          <div className='p-2'>
-            <div>{notes.data?.find((note) => note.id === isNoteOpen)?.id}</div>
-            <div>{notes.data?.find((note) => note.id === isNoteOpen)?.title}</div>
-          </div>
-        </div>
-      )}
+      {notes.data && openNote && <NoteEditor note={openNote} setOpenNote={setOpenNote} />}
+    </div>
+  )
+}
+
+const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
+  const tctx = trpc.useContext()
+
+  const { mutate: deleteNote } = trpc.useMutation(['notes.delete'], {
+    onMutate: ({ id }) => {
+      tctx.setQueryData(['notes.getAll'], (oldData) => oldData!.filter((n) => n.id !== id))
+    },
+  })
+  const { mutate: trashNote } = trpc.useMutation(['notes.trash'], {
+    onMutate: ({ id }) => {
+      tctx.setQueryData(['notes.getAll'], (oldData) =>
+        oldData!.map((n) => (n.id === id ? { ...n, status: 'TRASHED' } : n))
+      )
+    },
+  })
+  const { mutate: updateNote } = trpc.useMutation(['notes.update'], {
+    onMutate: ({ id, title, description, color }) => {
+      if (color) {
+        tctx.setQueryData(['notes.getAll'], (oldData) =>
+          oldData!.map((n) => (n.id === id ? { ...n, title, description, color } : { ...n }))
+        )
+      } else {
+        tctx.setQueryData(['notes.getAll'], (oldData) =>
+          oldData!.map((n) => (n.id === id ? { ...n, title, description } : { ...n }))
+        )
+      }
+    },
+  })
+
+  const typingTimeout = useRef<NodeJS.Timeout | null>(null)
+  const [desc, setDesc] = useState(note.description || '')
+  const onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDesc(e.target.value)
+    if (typingTimeout.current) clearTimeout(typingTimeout.current)
+    tctx.setQueryData(['notes.getAll'], (oldData) =>
+      oldData!
+        .map((n) => (n.id === note.id ? { ...n, description: e.target.value, updatedAt: new Date() } : n))
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+    )
+
+    typingTimeout.current = setTimeout(() => {
+      let description = e.target.value
+      updateNote({ id: note.id, title: note.title, description })
+      console.log('update', note.id, desc)
+    }, 1000)
+  }
+
+  return (
+    <div className='flex flex-col w-full absolute md:relative inset-0 bg-white z-50'>
+      <div className='flex justify-between p-2 border-b bg-white'>
+        <Button className='w-fit bg-slate-200' onClick={() => setOpenNote(null)}>
+          Close
+        </Button>
+        <Button
+          className='w-fit bg-slate-200'
+          onClick={() => {
+            note.status === 'TRASHED' ? deleteNote({ id: note.id }) : trashNote({ id: note.id })
+            setOpenNote(null)
+          }}>
+          <FaTrash />
+        </Button>
+      </div>
+      <div className='py-2 px-4'>
+        <div className='text-2xl'>{note.title}</div>
+        <textarea className='w-full h-full outline-none' onChange={(e) => onTextChange(e)} value={desc}></textarea>
+      </div>
     </div>
   )
 }

@@ -32,7 +32,8 @@ export const notesRouter = createProtectedRouter()
         },
       })
     },
-  }).mutation('update', {
+  })
+  .mutation('update', {
     input: z.object({
       id: z.string().min(1),
       title: z.string().nullable(),

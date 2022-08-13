@@ -1,5 +1,3 @@
-import { Nav } from './nav'
-
 interface Props {
   children: React.ReactNode
 }
