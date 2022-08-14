@@ -36,8 +36,8 @@ export const notesRouter = createProtectedRouter()
   .mutation('update', {
     input: z.object({
       id: z.string().min(1),
-      title: z.string().nullable(),
-      description: z.string().nullable(),
+      title: z.string().nullable().optional(),
+      description: z.string().nullable().optional(),
       color: z
         .string()
         .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
@@ -49,7 +49,11 @@ export const notesRouter = createProtectedRouter()
         where: {
           id: input.id,
         },
-        data: input,
+        data: {
+          title: input.title,
+          description: input.description,
+          color: input.color,
+        }
       })
     },
   })

@@ -3,7 +3,7 @@ import clsx from 'clsx'
 import type { NextPage } from 'next'
 import { signOut, useSession } from 'next-auth/react'
 import Head from 'next/head'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BiMenuAltLeft, BiSearchAlt } from 'react-icons/bi'
 import { FaTrash } from 'react-icons/fa'
 import { HiOutlineTrash } from 'react-icons/hi'
@@ -14,7 +14,7 @@ import { Button } from '../components/button'
 import Login from '../components/login'
 import NoteTile from '../components/note-tile'
 import { trpc } from '../utils/trpc'
-
+import { HexColorPicker } from 'react-colorful'
 interface EditorProps {
   note: Note
   setOpenNote: (note: Note | null) => void
@@ -48,15 +48,13 @@ const HomeContent: React.FC = () => {
   const handleCreateTodo = () => {
     createTodo({
       title: 'New Todo',
-      description: 'This is another new todo',
+      description: null,
       color: '#9BA2FF',
     })
   }
 
   const handleOpenNote = (note: Note) => {
-    //stupid fix, states are not updated unless we do this, better solution?
-    setOpenNote(null)
-    setTimeout(() => setOpenNote(note), 1)
+    setOpenNote(note)
   }
 
   if (!session.data) return <Login />
@@ -67,7 +65,7 @@ const HomeContent: React.FC = () => {
       {/**
        * Side Nav
        */}
-      <div className={clsx(sideNavOpen ? 'w-64' : ' w-0', 'h-full min-w-fit flex flex-col border-r transition-width')}>
+      <div className={clsx(sideNavOpen ? 'w-64 min-w-[256px]' : ' w-0 min-w-fit', 'h-full  flex flex-col border-r transition-width')}>
         <Button
           onClick={() => setSideNavOpen(!sideNavOpen)}
           className='px-2 py-4 border-b rounded-none hover:bg-slate-100'>
@@ -124,7 +122,7 @@ const HomeContent: React.FC = () => {
           <AutoAnimate className='flex flex-col w-full h-full max-h-full overflow-y-auto relative'>
             {!isTrashOpen ? (
               <>
-                {notes.data.filter((note) => note.status === 'IN_PROGRESS').length > 1 ? (
+                {notes.data.filter((note) => note.status === 'IN_PROGRESS').length > 0 ? (
                   notes.data
                     .filter((note) => note.status === 'IN_PROGRESS')
                     .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
@@ -134,7 +132,7 @@ const HomeContent: React.FC = () => {
               </>
             ) : (
               <>
-                {notes.data.filter((note) => note.status === 'TRASHED').length > 1 ? (
+                {notes.data.filter((note) => note.status === 'TRASHED').length > 0 ? (
                   notes.data
                     .filter((note) => note.status === 'TRASHED')
                     .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
@@ -179,35 +177,57 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
   })
   const { mutate: updateNote } = trpc.useMutation(['notes.update'], {
     onMutate: ({ id, title, description, color }) => {
-      if (color) {
-        tctx.setQueryData(['notes.getAll'], (oldData) =>
-          oldData!.map((n) => (n.id === id ? { ...n, title, description, color } : { ...n }))
+      tctx.setQueryData(['notes.getAll'], (oldData) =>
+        oldData!.map((n) =>
+          n.id === id
+            ? { ...n, title: title || n.title, description: description || n.description, color: color || n.color }
+            : { ...n }
         )
-      } else {
-        tctx.setQueryData(['notes.getAll'], (oldData) =>
-          oldData!.map((n) => (n.id === id ? { ...n, title, description } : { ...n }))
-        )
-      }
+      )
     },
   })
 
   const typingTimeout = useRef<NodeJS.Timeout | null>(null)
+  const colorTimeout = useRef<NodeJS.Timeout | null>(null)
   const [desc, setDesc] = useState(note.description || '')
+  const [color, setColor] = useState(note.color)
+
   const onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setDesc(e.target.value)
     if (typingTimeout.current) clearTimeout(typingTimeout.current)
+    let id = note.id
+    let title = note.title
+    let description = e.target.value
+    setDesc(e.target.value)
+    typingTimeout.current = setTimeout(() => {
+      updateNote({ id, title, description })
+      console.log('update', note.id, id, desc)
+    }, 500)
     tctx.setQueryData(['notes.getAll'], (oldData) =>
       oldData!
         .map((n) => (n.id === note.id ? { ...n, description: e.target.value, updatedAt: new Date() } : n))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
     )
-
-    typingTimeout.current = setTimeout(() => {
-      let description = e.target.value
-      updateNote({ id: note.id, title: note.title, description })
-      console.log('update', note.id, desc)
-    }, 1000)
   }
+
+  const onColorChange = (color: string) => {
+    if (colorTimeout.current) clearTimeout(colorTimeout.current)
+    let _color = color
+    setColor(color)
+    colorTimeout.current = setTimeout(() => {
+      updateNote({ id: note.id, title: note.title, description: note.description, color: _color })
+    }, 500)
+    tctx.setQueryData(['notes.getAll'], (oldData) =>
+      oldData!
+        .map((n) => (n.id === note.id ? { ...n, color } : n))
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+    )
+  }
+
+  //Update state when selecting another note
+  useEffect(() => {
+    setDesc(note.description || '')
+    setColor(note.color)
+  }, [note.color, note.description])
 
   return (
     <div className='flex flex-col w-full absolute md:relative inset-0 bg-white z-50'>
@@ -224,9 +244,11 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
           <FaTrash />
         </Button>
       </div>
-      <div className='py-2 px-4'>
+      <div className='py-2 px-4 h-full relative'>
+        <div>{note.id}</div>
         <div className='text-2xl'>{note.title}</div>
-        <textarea className='w-full h-full outline-none' onChange={(e) => onTextChange(e)} value={desc}></textarea>
+        <textarea className='w-full outline-none' onChange={(e) => onTextChange(e)} value={desc}></textarea>
+        <HexColorPicker color={color} onChange={onColorChange} />
       </div>
     </div>
   )
