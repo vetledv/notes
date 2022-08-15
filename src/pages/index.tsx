@@ -61,65 +61,69 @@ const HomeContent: React.FC = () => {
   if (notes.isLoading) return <div>Loading...</div>
 
   return (
-    <div className='flex overflow-hidden h-screen'>
+    <div className='flex h-screen overflow-hidden'>
       {/**
        * Side Nav
        */}
-      <div className={clsx(sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-10 min-w-[40px]', 'h-full  flex flex-col border-r transition-width duration-1000')}>
+      <div
+        className={clsx(
+          sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-10 min-w-[40px]',
+          'flex  h-full flex-col border-r transition-width duration-1000'
+        )}>
         <Button
           onClick={() => setSideNavOpen(!sideNavOpen)}
-          className='px-2 py-4 border-b rounded-none hover:bg-slate-100'>
-          <BiMenuAltLeft className='w-6 h-6' />
+          className='rounded-none border-b px-2 py-4 hover:bg-slate-100'>
+          <BiMenuAltLeft className='h-6 w-6' />
         </Button>
-        <div className='flex flex-col w-full h-full justify-between'>
+        <div className='flex h-full w-full flex-col justify-between'>
           <div>
             <Button
               onClick={() => setIsTrashOpen(false)}
-              className='rounded-none w-full flex px-2 gap-2 justify-start items-center hover:bg-slate-100 border-b'>
-              <TbNotes className='min-w-[24px] min-h-[24px]' />
+              className='flex w-full items-center justify-start gap-2 rounded-none border-b px-2 hover:bg-slate-100'>
+              <TbNotes className='min-h-[24px] min-w-[24px]' />
               <span className='overflow-hidden whitespace-nowrap'>All Notes</span>
             </Button>
             <Button
               onClick={() => setIsTrashOpen(true)}
-              className='rounded-none w-full flex px-2 gap-2 justify-start items-center hover:bg-slate-100 border-b'>
-              <HiOutlineTrash className='min-w-[24px] min-h-[24px]' />
+              className='flex w-full items-center justify-start gap-2 rounded-none border-b px-2 hover:bg-slate-100'>
+              <HiOutlineTrash className='min-h-[24px] min-w-[24px]' />
               <span className='overflow-hidden whitespace-nowrap'>Trash</span>
             </Button>
           </div>
           <div>
             <Button
-              className='cursor-pointer w-full flex items-center gap-2 py-2 px-2 hover:bg-slate-100'
+              className='flex w-full cursor-pointer items-center gap-2 py-2 px-2 hover:bg-slate-100'
               onClick={() => {
                 signOut()
               }}>
-              <MdLogout className='w-6 h-6' />
+              <MdLogout className='h-6 w-6' />
               {sideNavOpen && <span className='overflow-hidden whitespace-nowrap'>Log Out</span>}
             </Button>
-            {sideNavOpen && <p className='p-2 overflow-hidden whitespace-nowrap'>Made by dvries </p>}
+            {sideNavOpen && <p className='overflow-hidden whitespace-nowrap p-2'>Made by dvries </p>}
           </div>
         </div>
       </div>
       {/**
        * Main Content Nav
        */}
-      <div className='h-full flex flex-col w-full md:max-w-xs lg:max-w-sm md:min-w-[320px] lg:min-w-[384px] md:w-80 lg:w-96 md:border-r relative'>
-        <div className='border-b p-2 flex justify-between items-center'>
+      <div className='relative flex h-full w-full flex-col md:w-80 md:min-w-[320px] md:max-w-xs md:border-r lg:w-96 lg:min-w-[384px] lg:max-w-sm'>
+        <div className='flex items-center justify-between border-b p-2'>
           <div className='w-10 p-2'></div>
           {isTrashOpen ? <div>Trash</div> : <div>My notes</div>}
-          <Button className='bg-transparent w-fit px-2 py-2' onClick={handleCreateTodo}>
-            <TbEdit className='w-6 h-6' />
+          <Button className='w-fit bg-transparent px-2 py-2' onClick={handleCreateTodo}>
+            <TbEdit className='h-6 w-6' />
           </Button>
         </div>
         <span onClick={() => searchRef.current?.focus()} className='relative cursor-text'>
-          <BiSearchAlt className='w-6 h-6 absolute my-auto inset-y-0 left-4' />
+          <BiSearchAlt className='absolute inset-y-0 left-4 my-auto h-6 w-6' />
           <input
             ref={searchRef}
-            className='pl-12 pr-4 py-2 border-b w-full outline-none'
+            className='w-full border-b py-2 pl-12 pr-4 outline-none'
             placeholder='Search notes'></input>
         </span>
 
         {notes.data ? (
-          <AutoAnimate className='flex flex-col w-full h-full max-h-full overflow-y-auto relative'>
+          <AutoAnimate className='relative flex h-full max-h-full w-full flex-col overflow-y-auto'>
             {!isTrashOpen ? (
               <>
                 {notes.data.filter((note) => note.status === 'IN_PROGRESS').length > 0 ? (
@@ -147,7 +151,7 @@ const HomeContent: React.FC = () => {
         )}
 
         {isTrashOpen && (
-          <Button className='bg-white rounded-none w-full h-fit mt-auto py-4 border-t' onClick={() => emptyTrash()}>
+          <Button className='mt-auto h-fit w-full rounded-none border-t bg-white py-4' onClick={() => emptyTrash()}>
             Empty Trash
           </Button>
         )}
@@ -230,8 +234,8 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
   }, [note.color, note.description])
 
   return (
-    <div className='flex flex-col w-full absolute md:relative inset-0 bg-white z-50'>
-      <div className='flex justify-between p-2 border-b bg-white'>
+    <div className='absolute inset-0 z-50 flex w-full flex-col bg-white md:relative'>
+      <div className='flex justify-between border-b bg-white p-2'>
         <Button className='w-fit bg-slate-200' onClick={() => setOpenNote(null)}>
           Close
         </Button>
@@ -244,7 +248,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
           <FaTrash />
         </Button>
       </div>
-      <div className='py-2 px-4 h-full relative'>
+      <div className='relative h-full py-2 px-4'>
         <div>{note.id}</div>
         <div className='text-2xl'>{note.title}</div>
         <textarea className='w-full outline-none' onChange={(e) => onTextChange(e)} value={desc}></textarea>

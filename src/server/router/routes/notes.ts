@@ -53,7 +53,7 @@ export const notesRouter = createProtectedRouter()
           title: input.title,
           description: input.description,
           color: input.color,
-        }
+        },
       })
     },
   })

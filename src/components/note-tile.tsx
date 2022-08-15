@@ -23,16 +23,16 @@ const NoteTile: React.FC<NoteProps> = ({ note, ...props }) => {
     <div
       key={note.id}
       {...props}
-      className='hover:bg-slate-100 border-b h-20 cursor-pointer flex w-full relative bg-blue-200'>
+      className='relative flex h-20 w-full cursor-pointer border-b bg-blue-200 hover:bg-slate-100'>
       <div
-        className='h-full w-2 min-w-[8px] absolute left-0 z-10'
+        className='absolute left-0 z-10 h-full w-2 min-w-[8px]'
         style={{
           backgroundColor: note.color,
         }}
       />
-      <div className='flex flex-col w-full pl-2 relative '>
+      <div className='relative flex w-full flex-col pl-2 '>
         <div className='p-2 font-semibold'>{note.title}</div>
-        <div className='py-2 px-5 font-thin absolute text-ellipsis overflow-hidden whitespace-nowrap w-full bottom-0 left-0 bg-pink-200'>
+        <div className='absolute bottom-0 left-0 w-full overflow-hidden text-ellipsis whitespace-nowrap bg-pink-200 py-2 px-5 font-thin'>
           {note.description}
         </div>
       </div>
