@@ -15,6 +15,7 @@ import Login from '../components/login'
 import NoteTile from '../components/note-tile'
 import { trpc } from '../utils/trpc'
 import { HexColorPicker } from 'react-colorful'
+import { AiOutlinePlus } from 'react-icons/ai'
 interface EditorProps {
   note: Note
   setOpenNote: (note: Note | null) => void
@@ -68,7 +69,7 @@ const HomeContent: React.FC = () => {
       <div
         className={clsx(
           sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-10 min-w-[40px]',
-          'flex  h-full flex-col border-r transition-width'
+          'flex h-full flex-col border-r transition-width'
         )}>
         <Button
           onClick={() => setSideNavOpen(!sideNavOpen)}
@@ -92,11 +93,11 @@ const HomeContent: React.FC = () => {
           </div>
           <div>
             <Button
-              className='flex w-full cursor-pointer items-center gap-2 py-2 px-2 hover:bg-slate-100'
+              className='flex w-full cursor-pointer items-center gap-2 border-y py-2 px-2 hover:bg-slate-100'
               onClick={() => {
                 signOut()
               }}>
-              <MdLogout className='h-6 w-6' />
+              <MdLogout className='min-h-[24px] min-w-[24px]' />
               {sideNavOpen && <span className='overflow-hidden whitespace-nowrap'>Log Out</span>}
             </Button>
             {sideNavOpen && <p className='overflow-hidden whitespace-nowrap p-2'>Made by dvries </p>}
@@ -108,7 +109,7 @@ const HomeContent: React.FC = () => {
        */}
       <div className='relative flex h-full w-full flex-col md:w-80 md:min-w-[320px] md:max-w-xs md:border-r lg:w-96 lg:min-w-[384px] lg:max-w-sm'>
         <div className='flex items-center justify-between border-b p-2'>
-          <div className='w-10 p-2'></div>
+          <div className='w-10 p-2'/>
           {isTrashOpen ? <div>Trash</div> : <div>My notes</div>}
           <Button className='w-fit bg-transparent px-2 py-2' onClick={handleCreateTodo}>
             <TbEdit className='h-6 w-6' />
@@ -118,8 +119,8 @@ const HomeContent: React.FC = () => {
           <BiSearchAlt className='absolute inset-y-0 left-4 my-auto h-6 w-6' />
           <input
             ref={searchRef}
-            className='w-full border-b py-2 pl-12 pr-4 outline-none'
-            placeholder='Search notes'></input>
+            className='w-full border-b py-2 pl-12 pr-4 outline-none placeholder:italic'
+            placeholder='Search notes'/>
         </span>
 
         {notes.data ? (
@@ -141,7 +142,7 @@ const HomeContent: React.FC = () => {
                     .filter((note) => note.status === 'TRASHED')
                     .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
                 ) : (
-                  <div>trash empty</div>
+                  <div className='m-auto'>trash empty</div>
                 )}
               </>
             )}
@@ -151,7 +152,9 @@ const HomeContent: React.FC = () => {
         )}
 
         {isTrashOpen && (
-          <Button className='mt-auto h-fit w-full rounded-none border-t bg-white py-4' onClick={() => emptyTrash()}>
+          <Button
+            className='mt-auto h-fit w-full rounded-none border-t bg-white py-4 hover:bg-slate-100'
+            onClick={() => emptyTrash()}>
             Empty Trash
           </Button>
         )}
@@ -195,6 +198,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
   const colorTimeout = useRef<NodeJS.Timeout | null>(null)
   const [desc, setDesc] = useState(note.description || '')
   const [color, setColor] = useState(note.color)
+  const [openColorPicker, setOpenColorPicker] = useState(false)
 
   const onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (typingTimeout.current) clearTimeout(typingTimeout.current)
@@ -231,6 +235,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
   useEffect(() => {
     setDesc(note.description || '')
     setColor(note.color)
+    setOpenColorPicker(false)
   }, [note.color, note.description])
 
   return (
@@ -252,14 +257,22 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
         <div>{note.id}</div>
         <div className='text-2xl'>{note.title}</div>
         <textarea className='w-full outline-none' onChange={(e) => onTextChange(e)} value={desc}></textarea>
-        <HexColorPicker color={color} onChange={handleColor} />
       </div>
-      <div className='flex gap-2 p-2'>
-        <div onClick={() => handleColor('#fff24b')} className='h-6 w-6 bg-[#fff24b]'></div>
-        <div onClick={() => handleColor('#66a3ff')} className='h-6 w-6 bg-[#66a3ff]'></div>
-        <div onClick={() => handleColor('#ff215d')} className='h-6 w-6 bg-[#ff215d]'></div>
-        <div onClick={() => handleColor('#a940fc')} className='h-6 w-6 bg-[#a940fc]'></div>
-        <div onClick={() => handleColor('#58ff4a')} className='h-6 w-6 bg-[#58ff4a]'></div>
+        {openColorPicker && <HexColorPicker className='absolute' color={color} onChange={handleColor} />}
+      <div className='h-10 border-t relative'>
+        <div className='peer-target: flex w-fit gap-2 p-2 relative'>
+          <div onClick={() => handleColor('#fff24b')} className='h-6 w-6 rounded border bg-[#fff24b]'></div>
+          <div onClick={() => handleColor('#66a3ff')} className='h-6 w-6 rounded border bg-[#66a3ff]'></div>
+          <div onClick={() => handleColor('#ff215d')} className='h-6 w-6 rounded border bg-[#ff215d]'></div>
+          <div onClick={() => handleColor('#a940fc')} className='h-6 w-6 rounded border bg-[#a940fc]'></div>
+          <div onClick={() => handleColor('#58ff4a')} className='h-6 w-6 rounded border bg-[#58ff4a]'></div>
+          <div
+            onClick={() => {
+              setOpenColorPicker(!openColorPicker)
+            }}>
+            <AiOutlinePlus className='h-6 w-6' />
+          </div>
+        </div>
       </div>
     </div>
   )
