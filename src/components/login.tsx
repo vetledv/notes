@@ -7,8 +7,8 @@ const Login = () => {
     <div className='testing flex h-screen flex-col items-center justify-center gap-4'>
       <div className='flex flex-col gap-4'>
         <div>
-          <div className='w-fit border-b text-7xl font-bold'>Notes.</div>
-          <div className='w-fit border-b text-2xl font-bold'>That&apos;s it. Just your notes.</div>
+          <div className='w-fit text-7xl font-bold'>Notes.</div>
+          <div className='w-fit text-2xl font-bold'>That&apos;s it. Just your notes.</div>
         </div>
         <Button
           onClick={() => {
