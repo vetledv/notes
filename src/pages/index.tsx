@@ -68,7 +68,7 @@ const HomeContent: React.FC = () => {
       <div
         className={clsx(
           sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-10 min-w-[40px]',
-          'flex  h-full flex-col border-r transition-width duration-1000'
+          'flex  h-full flex-col border-r transition-width'
         )}>
         <Button
           onClick={() => setSideNavOpen(!sideNavOpen)}
@@ -213,7 +213,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
     )
   }
 
-  const onColorChange = (color: string) => {
+  const handleColor = (color: string) => {
     if (colorTimeout.current) clearTimeout(colorTimeout.current)
     let _color = color
     setColor(color)
@@ -252,7 +252,14 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
         <div>{note.id}</div>
         <div className='text-2xl'>{note.title}</div>
         <textarea className='w-full outline-none' onChange={(e) => onTextChange(e)} value={desc}></textarea>
-        <HexColorPicker color={color} onChange={onColorChange} />
+        <HexColorPicker color={color} onChange={handleColor} />
+      </div>
+      <div className='flex gap-2 p-2'>
+        <div onClick={() => handleColor('#fff24b')} className='h-6 w-6 bg-[#fff24b]'></div>
+        <div onClick={() => handleColor('#66a3ff')} className='h-6 w-6 bg-[#66a3ff]'></div>
+        <div onClick={() => handleColor('#ff215d')} className='h-6 w-6 bg-[#ff215d]'></div>
+        <div onClick={() => handleColor('#a940fc')} className='h-6 w-6 bg-[#a940fc]'></div>
+        <div onClick={() => handleColor('#58ff4a')} className='h-6 w-6 bg-[#58ff4a]'></div>
       </div>
     </div>
   )
