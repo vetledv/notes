@@ -65,7 +65,7 @@ const HomeContent: React.FC = () => {
       {/**
        * Side Nav
        */}
-      <div className={clsx(sideNavOpen ? 'w-64 min-w-[256px]' : ' w-0 min-w-fit', 'h-full  flex flex-col border-r transition-width')}>
+      <div className={clsx(sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-10 min-w-[40px]', 'h-full  flex flex-col border-r transition-width duration-1000')}>
         <Button
           onClick={() => setSideNavOpen(!sideNavOpen)}
           className='px-2 py-4 border-b rounded-none hover:bg-slate-100'>
@@ -76,14 +76,14 @@ const HomeContent: React.FC = () => {
             <Button
               onClick={() => setIsTrashOpen(false)}
               className='rounded-none w-full flex px-2 gap-2 justify-start items-center hover:bg-slate-100 border-b'>
-              <TbNotes className='w-6 h-6' />
-              {sideNavOpen && <span>All Notes</span>}
+              <TbNotes className='min-w-[24px] min-h-[24px]' />
+              <span className='overflow-hidden whitespace-nowrap'>All Notes</span>
             </Button>
             <Button
               onClick={() => setIsTrashOpen(true)}
               className='rounded-none w-full flex px-2 gap-2 justify-start items-center hover:bg-slate-100 border-b'>
-              <HiOutlineTrash className='w-6 h-6' />
-              {sideNavOpen && <span>Trash</span>}
+              <HiOutlineTrash className='min-w-[24px] min-h-[24px]' />
+              <span className='overflow-hidden whitespace-nowrap'>Trash</span>
             </Button>
           </div>
           <div>
@@ -93,9 +93,9 @@ const HomeContent: React.FC = () => {
                 signOut()
               }}>
               <MdLogout className='w-6 h-6' />
-              {sideNavOpen && <span>Log Out</span>}
+              {sideNavOpen && <span className='overflow-hidden whitespace-nowrap'>Log Out</span>}
             </Button>
-            {sideNavOpen && <p className='p-2'>Made by dvries </p>}
+            {sideNavOpen && <p className='p-2 overflow-hidden whitespace-nowrap'>Made by dvries </p>}
           </div>
         </div>
       </div>
