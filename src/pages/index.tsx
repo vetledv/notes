@@ -4,6 +4,8 @@ import type { NextPage } from 'next'
 import { signOut, useSession } from 'next-auth/react'
 import Head from 'next/head'
 import { useEffect, useRef, useState } from 'react'
+import { HexColorPicker } from 'react-colorful'
+import { AiOutlinePlus } from 'react-icons/ai'
 import { BiMenuAltLeft, BiSearchAlt } from 'react-icons/bi'
 import { FaTrash } from 'react-icons/fa'
 import { HiOutlineTrash } from 'react-icons/hi'
@@ -14,12 +16,6 @@ import { Button } from '../components/button'
 import Login from '../components/login'
 import NoteTile from '../components/note-tile'
 import { trpc } from '../utils/trpc'
-import { HexColorPicker } from 'react-colorful'
-import { AiOutlinePlus } from 'react-icons/ai'
-interface EditorProps {
-  note: Note
-  setOpenNote: (note: Note | null) => void
-}
 
 const HomeContent: React.FC = () => {
   const session = useSession()
@@ -30,9 +26,35 @@ const HomeContent: React.FC = () => {
   })
 
   const { mutate: createTodo } = trpc.useMutation(['notes.create'], {
+    onMutate(variables) {
+      //optimistically create a note, then update it when the server responds
+      const note = {
+        ...variables,
+        id: 'new',
+        status: 'IN_PROGRESS',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Note
+      tctx.setQueryData(['notes.getAll'], (data) => {
+        if (!data) return [note]
+        return [note, ...data]
+      })
+    },
     onSuccess: (data, variables, context) => {
       console.log('createTodo success', data, variables, context)
-      tctx.setQueryData(['notes.getAll'], (prev) => (prev ? [data, ...prev] : [data]))
+      //update the note with id 'new' that was set in the onMutate callback
+      //this makes autoanimate "flick" twice, fix?
+      tctx.setQueryData(['notes.getAll'], (prev) => {
+        if (!prev) return [data]
+        return prev.map((note) =>
+          note.id === 'new'
+            ? {
+                ...variables,
+                ...data,
+              }
+            : note
+        )
+      })
     },
   })
   const { mutate: emptyTrash } = trpc.useMutation(['notes.deleteAllTrash'], {
@@ -58,11 +80,12 @@ const HomeContent: React.FC = () => {
     setOpenNote(note)
   }
 
-  if (!session.data) return <Login />
+  if (session.status === 'loading') return <div>Loading...</div>
   if (notes.isLoading) return <div>Loading...</div>
+  if (!session.data) return <Login />
 
   return (
-    <div className='flex h-screen overflow-hidden'>
+    <div className='flex h-full overflow-hidden'>
       {/**
        * Side Nav
        */}
@@ -109,7 +132,7 @@ const HomeContent: React.FC = () => {
        */}
       <div className='relative flex h-full w-full flex-col md:w-80 md:min-w-[320px] md:max-w-xs md:border-r lg:w-96 lg:min-w-[384px] lg:max-w-sm'>
         <div className='flex items-center justify-between border-b p-2'>
-          <div className='w-10 p-2'/>
+          <div className='w-10 p-2' />
           {isTrashOpen ? <div>Trash</div> : <div>My notes</div>}
           <Button className='w-fit bg-transparent px-2 py-2' onClick={handleCreateTodo}>
             <TbEdit className='h-6 w-6' />
@@ -120,9 +143,9 @@ const HomeContent: React.FC = () => {
           <input
             ref={searchRef}
             className='w-full border-b py-2 pl-12 pr-4 outline-none placeholder:italic'
-            placeholder='Search notes'/>
+            placeholder='Search notes'
+          />
         </span>
-
         {notes.data ? (
           <AutoAnimate className='relative flex h-full max-h-full w-full flex-col overflow-y-auto'>
             {!isTrashOpen ? (
@@ -132,7 +155,7 @@ const HomeContent: React.FC = () => {
                     .filter((note) => note.status === 'IN_PROGRESS')
                     .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
                 ) : (
-                  <div>no notes</div>
+                  <div className='m-auto'>No notes.</div>
                 )}
               </>
             ) : (
@@ -142,7 +165,7 @@ const HomeContent: React.FC = () => {
                     .filter((note) => note.status === 'TRASHED')
                     .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
                 ) : (
-                  <div className='m-auto'>trash empty</div>
+                  <div className='m-auto'>Trash is empty.</div>
                 )}
               </>
             )}
@@ -150,7 +173,6 @@ const HomeContent: React.FC = () => {
         ) : (
           <div>No Notes</div>
         )}
-
         {isTrashOpen && (
           <Button
             className='mt-auto h-fit w-full rounded-none border-t bg-white py-4 hover:bg-slate-100'
@@ -165,6 +187,11 @@ const HomeContent: React.FC = () => {
       {notes.data && openNote && <NoteEditor note={openNote} setOpenNote={setOpenNote} />}
     </div>
   )
+}
+
+interface EditorProps {
+  note: Note
+  setOpenNote: (note: Note | null) => void
 }
 
 const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
@@ -226,7 +253,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
     }, 500)
     tctx.setQueryData(['notes.getAll'], (oldData) =>
       oldData!
-        .map((n) => (n.id === note.id ? { ...n, color } : n))
+        .map((n) => (n.id === note.id ? { ...n, color, updatedAt: new Date() } : n))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
     )
   }
@@ -254,13 +281,12 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
         </Button>
       </div>
       <div className='relative h-full py-2 px-4'>
-        <div>{note.id}</div>
         <div className='text-2xl'>{note.title}</div>
         <textarea className='w-full outline-none' onChange={(e) => onTextChange(e)} value={desc}></textarea>
       </div>
-        {openColorPicker && <HexColorPicker className='absolute' color={color} onChange={handleColor} />}
-      <div className='h-10 border-t relative'>
-        <div className='peer-target: flex w-fit gap-2 p-2 relative'>
+      {openColorPicker && <HexColorPicker className='absolute' color={color} onChange={handleColor} />}
+      <div className='relative h-10 border-t'>
+        <div className='peer-target: relative flex w-fit gap-2 p-2'>
           <div onClick={() => handleColor('#fff24b')} className='h-6 w-6 rounded border bg-[#fff24b]'></div>
           <div onClick={() => handleColor('#66a3ff')} className='h-6 w-6 rounded border bg-[#66a3ff]'></div>
           <div onClick={() => handleColor('#ff215d')} className='h-6 w-6 rounded border bg-[#ff215d]'></div>
