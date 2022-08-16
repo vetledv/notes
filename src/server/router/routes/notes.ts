@@ -16,12 +16,16 @@ export const notesRouter = createProtectedRouter()
   })
   .mutation('create', {
     input: z.object({
-      title: z.string().optional(),
-      description: z.string().nullish().optional(),
+      id: z.string().cuid(),
+      title: z.string().nullable(),
+      description: z.string().nullable(),
       color: z
         .string()
         .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
         .optional(),
+      status: z.enum(['IN_PROGRESS', 'TRASHED']),
+      createdAt: z.date().default(() => new Date()),
+      updatedAt: z.date().default(() => new Date()),
     }),
 
     async resolve({ ctx, input }) {

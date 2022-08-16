@@ -11,11 +11,13 @@ import { FaTrash } from 'react-icons/fa'
 import { HiOutlineTrash } from 'react-icons/hi'
 import { MdLogout } from 'react-icons/md'
 import { TbEdit, TbNotes } from 'react-icons/tb'
+import { z } from 'zod'
 import AutoAnimate from '../components/auto-animate'
 import { Button } from '../components/button'
 import Login from '../components/login'
 import NoteTile from '../components/note-tile'
 import { trpc } from '../utils/trpc'
+import cuid from 'cuid'
 
 const HomeContent: React.FC = () => {
   const session = useSession()
@@ -27,15 +29,29 @@ const HomeContent: React.FC = () => {
 
   const { mutate: createTodo } = trpc.useMutation(['notes.create'], {
     onMutate(variables) {
+      tctx.cancelQuery(['notes.getAll'])
+      const newNote = {
+        ...variables,
+        userId: session!.data!.user!.id,
+      } as Note
+      tctx.setQueryData(['notes.getAll'], (data) => {
+        if (!data) return [newNote]
+        return [newNote, ...data]
+      })
+
+      return { newNote }
     },
-    onSuccess: (data, variables, context) => {
-      //update the context.note's id with the server's id
+    onSuccess(){
       tctx.invalidateQueries(['notes.getAll'])
-    },
+    }
   })
   const { mutate: emptyTrash } = trpc.useMutation(['notes.deleteAllTrash'], {
     onMutate: () => {
+      tctx.cancelQuery(['notes.getAll'])
       tctx.setQueryData(['notes.getAll'], (oldData) => oldData!.filter((n) => n.status !== 'TRASHED'))
+    },
+    onSettled(data, variables, context) {
+      tctx.invalidateQueries(['notes.getAll'])
     },
   })
 
@@ -45,10 +61,15 @@ const HomeContent: React.FC = () => {
   const searchRef = useRef<HTMLInputElement>(null)
 
   const handleCreateTodo = () => {
+    z.string().cuid().safeParse(new Date().getTime().toString() + session.data?.user?.id.slice(0, 4))
     createTodo({
+      id: cuid(),
       title: Math.random().toString(36).substring(2, 9),
-      description: null,
-      color: '#9BA2FF',
+      description: '',
+      color: '#D8E2DC',
+      status: 'IN_PROGRESS',
+      createdAt: new Date(),
+      updatedAt: new Date(),
     })
   }
 
@@ -57,7 +78,7 @@ const HomeContent: React.FC = () => {
   }
 
   if (session.status === 'loading') return <div>Loading...</div>
-  if (notes.isLoading) return <div>Loading...</div>
+  if (!notes.data) return <div>Loading...</div>
   if (!session.data) return <Login />
 
   return (
@@ -122,33 +143,29 @@ const HomeContent: React.FC = () => {
             placeholder='Search notes'
           />
         </span>
-        {notes.data ? (
-          <AutoAnimate className='relative flex h-full max-h-full w-full flex-col overflow-y-auto'>
-            {!isTrashOpen ? (
-              <>
-                {notes.data.filter((note) => note.status === 'IN_PROGRESS').length > 0 ? (
-                  notes.data
-                    .filter((note) => note.status === 'IN_PROGRESS')
-                    .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
-                ) : (
-                  <div className='m-auto'>No notes.</div>
-                )}
-              </>
-            ) : (
-              <>
-                {notes.data.filter((note) => note.status === 'TRASHED').length > 0 ? (
-                  notes.data
-                    .filter((note) => note.status === 'TRASHED')
-                    .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
-                ) : (
-                  <div className='m-auto'>Trash is empty.</div>
-                )}
-              </>
-            )}
-          </AutoAnimate>
-        ) : (
-          <div>No Notes</div>
-        )}
+        <AutoAnimate className='relative flex h-full max-h-full w-full flex-col overflow-y-auto'>
+          {!isTrashOpen ? (
+            <>
+              {notes.data.filter((note) => note.status === 'IN_PROGRESS').length > 0 ? (
+                notes.data
+                  .filter((note) => note.status === 'IN_PROGRESS')
+                  .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
+              ) : (
+                <div className='m-auto'>No notes.</div>
+              )}
+            </>
+          ) : (
+            <>
+              {notes.data.filter((note) => note.status === 'TRASHED').length > 0 ? (
+                notes.data
+                  .filter((note) => note.status === 'TRASHED')
+                  .map((note) => <NoteTile key={note.id} note={note} onClick={() => handleOpenNote(note)} />)
+              ) : (
+                <div className='m-auto'>Trash is empty.</div>
+              )}
+            </>
+          )}
+        </AutoAnimate>
         {isTrashOpen && (
           <Button
             className='mt-auto h-fit w-full rounded-none border-t bg-white py-4 hover:bg-slate-100'
@@ -241,8 +258,6 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
     setOpenColorPicker(false)
   }, [note])
 
-  console.log(desc)
-
   return (
     <div className='absolute inset-0 z-50 flex w-full flex-col bg-white md:relative'>
       <div className='flex justify-between border-b bg-white p-2'>
@@ -258,12 +273,9 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
           <FaTrash />
         </Button>
       </div>
-      <div style={{
-        backgroundColor: color,
-      }} className='h-0.5 w-full'></div>
       <div className='relative h-full py-2 px-4'>
         <div className='text-2xl'>{note.title}</div>
-        <textarea className='w-full outline-none' onChange={(e) => onTextChange(e)} value={desc}></textarea>
+        <textarea className='w-full outline-none' rows={4} onChange={(e) => onTextChange(e)} value={desc}></textarea>
       </div>
       {openColorPicker && <HexColorPicker className='absolute' color={color} onChange={handleColor} />}
       <div className='relative h-10 border-t'>
