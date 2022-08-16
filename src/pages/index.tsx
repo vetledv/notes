@@ -27,34 +27,10 @@ const HomeContent: React.FC = () => {
 
   const { mutate: createTodo } = trpc.useMutation(['notes.create'], {
     onMutate(variables) {
-      //optimistically create a note, then update it when the server responds
-      const note = {
-        ...variables,
-        id: 'new',
-        status: 'IN_PROGRESS',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as Note
-      tctx.setQueryData(['notes.getAll'], (data) => {
-        if (!data) return [note]
-        return [note, ...data]
-      })
     },
     onSuccess: (data, variables, context) => {
-      console.log('createTodo success', data, variables, context)
-      //update the note with id 'new' that was set in the onMutate callback
-      //this makes autoanimate "flick" twice, fix?
-      tctx.setQueryData(['notes.getAll'], (prev) => {
-        if (!prev) return [data]
-        return prev.map((note) =>
-          note.id === 'new'
-            ? {
-                ...variables,
-                ...data,
-              }
-            : note
-        )
-      })
+      //update the context.note's id with the server's id
+      tctx.invalidateQueries(['notes.getAll'])
     },
   })
   const { mutate: emptyTrash } = trpc.useMutation(['notes.deleteAllTrash'], {
@@ -70,7 +46,7 @@ const HomeContent: React.FC = () => {
 
   const handleCreateTodo = () => {
     createTodo({
-      title: 'New Todo',
+      title: Math.random().toString(36).substring(2, 9),
       description: null,
       color: '#9BA2FF',
     })
@@ -263,7 +239,9 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
     setDesc(note.description || '')
     setColor(note.color)
     setOpenColorPicker(false)
-  }, [note.color, note.description])
+  }, [note])
+
+  console.log(desc)
 
   return (
     <div className='absolute inset-0 z-50 flex w-full flex-col bg-white md:relative'>
@@ -280,6 +258,9 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
           <FaTrash />
         </Button>
       </div>
+      <div style={{
+        backgroundColor: color,
+      }} className='h-0.5 w-full'></div>
       <div className='relative h-full py-2 px-4'>
         <div className='text-2xl'>{note.title}</div>
         <textarea className='w-full outline-none' onChange={(e) => onTextChange(e)} value={desc}></textarea>
