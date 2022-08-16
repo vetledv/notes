@@ -79,13 +79,21 @@ const HomeContent: React.FC = () => {
     setOpenNote(note)
   }
 
-  if (session.status === 'loading' || !notes.data)
+  if (session.status === 'loading') {
     return (
       <div className='flex h-screen flex-col items-center justify-center '>
         <AiOutlineLoading3Quarters className='h-10 w-10 animate-spin' />
       </div>
     )
+  }
   if (!session.data) return <Login />
+  if (!notes.data) {
+    return (
+      <div className='flex h-screen flex-col items-center justify-center '>
+        <AiOutlineLoading3Quarters className='h-10 w-10 animate-spin' />
+      </div>
+    )
+  }
 
   return (
     <div className='flex h-full overflow-hidden'>
