@@ -5,7 +5,7 @@ import { signOut, useSession } from 'next-auth/react'
 import Head from 'next/head'
 import { useEffect, useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
-import { AiOutlinePlus } from 'react-icons/ai'
+import { AiOutlineLoading3Quarters, AiOutlinePlus } from 'react-icons/ai'
 import { BiMenuAltLeft, BiSearchAlt } from 'react-icons/bi'
 import { FaTrash } from 'react-icons/fa'
 import { HiOutlineTrash } from 'react-icons/hi'
@@ -41,9 +41,9 @@ const HomeContent: React.FC = () => {
 
       return { newNote }
     },
-    onSuccess(){
+    onSuccess() {
       tctx.invalidateQueries(['notes.getAll'])
-    }
+    },
   })
   const { mutate: emptyTrash } = trpc.useMutation(['notes.deleteAllTrash'], {
     onMutate: () => {
@@ -61,7 +61,9 @@ const HomeContent: React.FC = () => {
   const searchRef = useRef<HTMLInputElement>(null)
 
   const handleCreateTodo = () => {
-    z.string().cuid().safeParse(new Date().getTime().toString() + session.data?.user?.id.slice(0, 4))
+    z.string()
+      .cuid()
+      .safeParse(new Date().getTime().toString() + session.data?.user?.id.slice(0, 4))
     createTodo({
       id: cuid(),
       title: Math.random().toString(36).substring(2, 9),
@@ -77,8 +79,12 @@ const HomeContent: React.FC = () => {
     setOpenNote(note)
   }
 
-  if (session.status === 'loading') return <div>Loading...</div>
-  if (!notes.data) return <div>Loading...</div>
+  if (session.status === 'loading' || !notes.data)
+    return (
+      <div className='flex h-screen flex-col items-center justify-center '>
+        <AiOutlineLoading3Quarters className='h-10 w-10 animate-spin' />
+      </div>
+    )
   if (!session.data) return <Login />
 
   return (
