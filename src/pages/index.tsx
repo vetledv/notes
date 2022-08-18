@@ -48,9 +48,9 @@ const HomeContent: React.FC = () => {
 
       return { newNote }
     },
-    onSuccess() {
-      tctx.invalidateQueries(['notes.getAll'])
-    },
+    // onSuccess() {
+    //   tctx.invalidateQueries(['notes.getAll'])
+    // },
   })
   const { mutate: emptyTrash } = trpc.useMutation(['notes.deleteAllTrash'], {
     onMutate: () => {
