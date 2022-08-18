@@ -18,6 +18,8 @@ import Login from '../components/login'
 import NoteTile from '../components/note-tile'
 import { trpc } from '../utils/trpc'
 import cuid from 'cuid'
+import { GetServerSidePropsContext } from 'next'
+import { getUnstableSession } from './../server/unstable-get-session'
 
 const HomeContent: React.FC = () => {
   const session = useSession()
@@ -79,13 +81,6 @@ const HomeContent: React.FC = () => {
     setOpenNote(note)
   }
 
-  if (session.status === 'loading') {
-    return (
-      <div className='flex h-screen flex-col items-center justify-center '>
-        <AiOutlineLoading3Quarters className='h-10 w-10 animate-spin' />
-      </div>
-    )
-  }
   if (!session.data) return <Login />
   if (!notes.data) {
     return (
@@ -250,7 +245,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
     )
   }
-
+  //TODO: changing color before onTextChange is finished overwrites onTextChange
   const handleColor = (color: string) => {
     if (colorTimeout.current) clearTimeout(colorTimeout.current)
     let _color = color
@@ -321,6 +316,14 @@ const Home: NextPage = () => {
       <HomeContent />
     </>
   )
+}
+
+export async function getServerSideProps(ctx: GetServerSidePropsContext) {
+  return {
+    props: {
+      session: await getUnstableSession(ctx),
+    },
+  }
 }
 
 export default Home
