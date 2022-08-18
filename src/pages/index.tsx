@@ -34,7 +34,7 @@ const HomeContent: React.FC = () => {
     enabled: !!session.data,
   })
 
-  const { mutate: createTodo } = trpc.useMutation(['notes.create'], {
+  const createTodo = trpc.useMutation(['notes.create'], {
     onMutate(variables) {
       tctx.cancelQuery(['notes.getAll'])
       const newNote = {
@@ -71,7 +71,7 @@ const HomeContent: React.FC = () => {
     z.string()
       .cuid()
       .safeParse(new Date().getTime().toString() + session.data?.user?.id.slice(0, 4))
-    createTodo({
+    createTodo.mutate({
       id: cuid(),
       title: Math.random().toString(36).substring(2, 9),
       description: '',
@@ -145,7 +145,7 @@ const HomeContent: React.FC = () => {
         <div className='flex items-center justify-between border-b p-2'>
           <div className='w-10 p-2' />
           {isTrashOpen ? <div>Trash</div> : <div>My notes</div>}
-          <Button className='w-fit bg-transparent px-2 py-2' onClick={handleCreateTodo}>
+          <Button className='w-fit bg-transparent px-2 py-2' disabled={createTodo.isLoading} onClick={handleCreateTodo}>
             <TbEdit className='h-6 w-6' />
           </Button>
         </div>
