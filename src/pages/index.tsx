@@ -1,24 +1,29 @@
 import type { Note } from '@prisma/client'
-import clsx from 'clsx'
 import type { NextPage } from 'next'
+import type { GetServerSidePropsContext } from 'next'
+
+import clsx from 'clsx'
+import cuid from 'cuid'
 import { signOut, useSession } from 'next-auth/react'
+import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import { useEffect, useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
+import { z } from 'zod'
+
+//icons
 import { AiOutlineLoading3Quarters, AiOutlinePlus } from 'react-icons/ai'
 import { BiMenuAltLeft, BiSearchAlt } from 'react-icons/bi'
 import { FaTrash } from 'react-icons/fa'
 import { HiOutlineTrash } from 'react-icons/hi'
 import { MdLogout } from 'react-icons/md'
 import { TbEdit, TbNotes } from 'react-icons/tb'
-import { z } from 'zod'
+
 import AutoAnimate from '../components/auto-animate'
 import { Button } from '../components/button'
 import Login from '../components/login'
 import NoteTile from '../components/note-tile'
 import { trpc } from '../utils/trpc'
-import cuid from 'cuid'
-import { GetServerSidePropsContext } from 'next'
 import { getUnstableSession } from './../server/unstable-get-session'
 
 const HomeContent: React.FC = () => {
@@ -229,38 +234,39 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
   const [color, setColor] = useState(note.color)
   const [openColorPicker, setOpenColorPicker] = useState(false)
 
+  // Update note when typing, set timeout to avoid too many requests
   const onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (typingTimeout.current) clearTimeout(typingTimeout.current)
     let id = note.id
     let title = note.title
     let description = e.target.value
     setDesc(e.target.value)
-    typingTimeout.current = setTimeout(() => {
-      updateNote({ id, title, description })
-      console.log('update', note.id, id, desc)
-    }, 500)
     tctx.setQueryData(['notes.getAll'], (oldData) =>
       oldData!
         .map((n) => (n.id === note.id ? { ...n, description: e.target.value, updatedAt: new Date() } : n))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
     )
+    typingTimeout.current = setTimeout(() => {
+      updateNote({ id, title, description })
+      console.log('update', note.id, id, desc)
+    }, 500)
   }
-  //TODO: changing color before onTextChange is finished overwrites onTextChange
+
+  // update note color
   const handleColor = (color: string) => {
     if (colorTimeout.current) clearTimeout(colorTimeout.current)
-    let _color = color
     setColor(color)
-    colorTimeout.current = setTimeout(() => {
-      updateNote({ id: note.id, title: note.title, description: note.description, color: _color })
-    }, 500)
     tctx.setQueryData(['notes.getAll'], (oldData) =>
       oldData!
         .map((n) => (n.id === note.id ? { ...n, color, updatedAt: new Date() } : n))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
     )
+    colorTimeout.current = setTimeout(() => {
+      updateNote({ id: note.id, color: color })
+    }, 500)
   }
 
-  //Update state when selecting another note
+  //Update states when selecting another note
   useEffect(() => {
     setDesc(note.description || '')
     setColor(note.color)
@@ -306,6 +312,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
   )
 }
 
+
 const Home: NextPage = () => {
   return (
     <>
@@ -318,6 +325,7 @@ const Home: NextPage = () => {
   )
 }
 
+//unstable get session for improved load performance
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   return {
     props: {
