@@ -85,7 +85,7 @@ const HomeContent: React.FC = () => {
   if (!notes) return <LoadingSkeleton />
 
   return (
-    <div className='flex min-h-screen w-full overflow-hidden'>
+    <div className='box-border flex h-screen w-full overflow-hidden'>
       <SideNav>
         <Button
           onClick={() => setNoteFilter('IN_PROGRESS')}

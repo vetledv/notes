@@ -27,7 +27,7 @@ const LoadingSkeleton = () => {
   }
 
   return (
-    <div className='flex min-h-screen w-full overflow-hidden'>
+    <div className='flex h-screen box-border w-full overflow-hidden'>
       <div className='flex h-full w-10 min-w-[40px] flex-col border-r transition-width'>
         <Button className='rounded-none border-b px-2 py-4 hover:bg-slate-100'>
           <BiMenuAltLeft className='h-6 w-6' />
