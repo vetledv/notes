@@ -20,6 +20,7 @@ import NoteTile from '@/components/note-tile'
 import SideNav from '@/components/sidenav'
 import { trpc } from '@/utils/trpc'
 import { getUnstableSession } from '@server/unstable-get-session'
+import useWindowResize from '@/hooks/use-window-resize'
 
 const HomeContent: React.FC = () => {
   const session = useSession()
@@ -53,6 +54,8 @@ const HomeContent: React.FC = () => {
     },
   })
 
+  const windowSize = useWindowResize([])
+  console.log(windowSize)
   const [activeNote, setActiveNote] = useState<string | null>(null)
   const [noteFilter, setNoteFilter] = useState<'IN_PROGRESS' | 'TRASHED'>('IN_PROGRESS')
   const searchRef = useRef<HTMLInputElement>(null)
@@ -85,7 +88,11 @@ const HomeContent: React.FC = () => {
   if (!notes) return <LoadingSkeleton />
 
   return (
-    <div className='box-border flex h-screen w-full overflow-hidden'>
+    <div
+      style={{
+        height: windowSize.height,
+      }}
+      className='box-border flex w-full overflow-hidden'>
       <SideNav>
         <Button
           onClick={() => setNoteFilter('IN_PROGRESS')}

@@ -1,4 +1,5 @@
 import AutoAnimate from '@/components/auto-animate'
+import useWindowResize from '@/hooks/use-window-resize'
 import { BiMenuAltLeft, BiSearchAlt } from 'react-icons/bi'
 import { HiOutlineTrash } from 'react-icons/hi'
 import { MdLogout } from 'react-icons/md'
@@ -18,16 +19,22 @@ const LoadingNote = () => {
 }
 
 const LoadingSkeleton = () => {
+  const windowSize = useWindowResize([])
+
   const loadingNotes = () => {
     let notes: JSX.Element[] = []
     for (let i = 0; i < 5; i++) {
-      notes.push(<LoadingNote />)
+      notes.push(<LoadingNote key={i} />)
     }
     return notes
   }
 
   return (
-    <div className='flex h-screen box-border w-full overflow-hidden'>
+    <div
+      style={{
+        height: windowSize.height,
+      }}
+      className='box-border flex w-full overflow-hidden'>
       <div className='flex h-full w-10 min-w-[40px] flex-col border-r transition-width'>
         <Button className='rounded-none border-b px-2 py-4 hover:bg-slate-100'>
           <BiMenuAltLeft className='h-6 w-6' />
