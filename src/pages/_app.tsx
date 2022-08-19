@@ -1,19 +1,15 @@
-// src/pages/_app.tsx
 import { withTRPC } from '@trpc/next'
-import type { AppRouter } from '../server/router'
-import type { AppType } from 'next/dist/shared/lib/utils'
-import superjson from 'superjson'
 import { SessionProvider } from 'next-auth/react'
+import type { AppType } from 'next/dist/shared/lib/utils'
 import { ReactQueryDevtools } from 'react-query/devtools'
+import superjson from 'superjson'
+import type { AppRouter } from '../server/router'
 import '../styles/globals.css'
-import Layout from '../components/layout'
 
 const MyApp: AppType = ({ Component, pageProps: { session, ...pageProps } }) => {
   return (
     <SessionProvider session={session}>
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
+      <Component {...pageProps} />
       <ReactQueryDevtools initialIsOpen={false} position='bottom-right' />
     </SessionProvider>
   )
@@ -42,7 +38,9 @@ export default withTRPC<AppRouter>({
       /**
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
-      queryClientConfig: { defaultOptions: { queries: { staleTime: 60, refetchOnWindowFocus: false } } },
+      queryClientConfig: {
+        defaultOptions: { queries: { staleTime: 60, refetchOnWindowFocus: false, refetchOnReconnect: true } },
+      },
     }
   },
   /**

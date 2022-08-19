@@ -23,7 +23,7 @@ export const notesRouter = createProtectedRouter()
         .string()
         .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
         .optional(),
-      status: z.enum(['IN_PROGRESS', 'TRASHED']),
+      status: z.enum(['IN_PROGRESS', 'TRASHED']).optional(),
       createdAt: z.date().default(() => new Date()),
       updatedAt: z.date().default(() => new Date()),
     }),
@@ -32,6 +32,7 @@ export const notesRouter = createProtectedRouter()
       return await ctx.prisma.note.create({
         data: {
           userId: ctx.session.user.id,
+          status: input.status || 'IN_PROGRESS',
           ...input,
         },
       })
@@ -39,7 +40,7 @@ export const notesRouter = createProtectedRouter()
   })
   .mutation('update', {
     input: z.object({
-      id: z.string().min(1),
+      id: z.string().cuid(),
       title: z.string().nullable().optional(),
       description: z.string().nullable().optional(),
       color: z
@@ -63,7 +64,7 @@ export const notesRouter = createProtectedRouter()
   })
   .mutation('trash', {
     input: z.object({
-      id: z.string(),
+      id: z.string().cuid(),
     }),
     async resolve({ ctx, input }) {
       return await ctx.prisma.note.update({
@@ -76,9 +77,9 @@ export const notesRouter = createProtectedRouter()
       })
     },
   })
-  .mutation('delete', {
+  .mutation('deleteOneTrashed', {
     input: z.object({
-      id: z.string(),
+      id: z.string().cuid(),
     }),
     async resolve({ ctx, input }) {
       return await ctx.prisma.note.delete({
@@ -88,7 +89,7 @@ export const notesRouter = createProtectedRouter()
       })
     },
   })
-  .mutation('deleteAllTrash', {
+  .mutation('deleteAllTrashed', {
     async resolve({ ctx }) {
       return await ctx.prisma.note.deleteMany({
         where: {
