@@ -55,7 +55,6 @@ const HomeContent: React.FC = () => {
   })
 
   const windowSize = useWindowResize([])
-  console.log(windowSize)
   const [activeNote, setActiveNote] = useState<string | null>(null)
   const [noteFilter, setNoteFilter] = useState<'IN_PROGRESS' | 'TRASHED'>('IN_PROGRESS')
   const searchRef = useRef<HTMLInputElement>(null)
@@ -63,7 +62,7 @@ const HomeContent: React.FC = () => {
   const handleCreateTodo = () => {
     createTodo.mutate({
       id: cuid(),
-      title: Math.random().toString(36).substring(2, 9),
+      title: "New Note",
       description: '',
       color: '#D8E2DC',
       status: 'IN_PROGRESS',

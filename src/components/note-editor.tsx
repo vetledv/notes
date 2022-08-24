@@ -1,5 +1,7 @@
+import useClickOutside from '@/hooks/use-click-outside'
 import { trpc } from '@/utils/trpc'
 import { Note } from '@prisma/client'
+import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { AiOutlinePlus } from 'react-icons/ai'
@@ -38,26 +40,33 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
     },
   })
 
+  const colorSelectRef = useRef<HTMLDivElement>(null)
   const typingTimeout = useRef<NodeJS.Timeout | null>(null)
   const colorTimeout = useRef<NodeJS.Timeout | null>(null)
+
+  const [title, setTitle] = useState(note.title || '')
   const [desc, setDesc] = useState(note.description || '')
+
   const [color, setColor] = useState(note.color)
   const [openColorPicker, setOpenColorPicker] = useState(false)
 
+  useClickOutside(colorSelectRef, () => setOpenColorPicker(false))
+
   // Update note when typing, set timeout to avoid too many requests
-  const onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>, type: 'title' | 'desc') => {
     if (typingTimeout.current) clearTimeout(typingTimeout.current)
     let id = note.id
-    let title = note.title
-    let description = e.target.value
-    setDesc(e.target.value)
+    let t = type === 'title' ? e.target.value : title
+    let d = type === 'desc' ? e.target.value : desc
+    setTitle(t)
+    setDesc(d)
     tctx.setQueryData(['notes.getAll'], (oldData) =>
       oldData!
-        .map((n) => (n.id === note.id ? { ...n, description: e.target.value, updatedAt: new Date() } : n))
+        .map((n) => (n.id === note.id ? { ...n, title:t, description: d, updatedAt: new Date() } : n))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
     )
     typingTimeout.current = setTimeout(() => {
-      updateNote({ id, title, description })
+      updateNote({ id, title: t, description: d })
       console.log('update', note.id, id, desc)
     }, 500)
   }
@@ -76,12 +85,13 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
     }, 500)
   }
 
-  //Update states when selecting another note
+  //Reset states when selecting another note
   useEffect(() => {
     setDesc(note.description || '')
     setColor(note.color)
     setOpenColorPicker(false)
-  }, [note])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [note.id])
 
   return (
     <div className='absolute inset-0 z-50 flex w-full flex-col bg-white md:relative'>
@@ -98,19 +108,32 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
           <FaTrash />
         </Button>
       </div>
-      <div className='relative h-full py-2 px-4'>
-        <div className='text-2xl'>{note.title}</div>
-        <textarea className='w-full outline-none' rows={4} onChange={(e) => onTextChange(e)} value={desc}></textarea>
+      <div className='relative h-full space-y-2 py-2 px-4'>
+        <input
+          className='h-fit w-full bg-slate-100 text-2xl outline-none'
+          placeholder='Title'
+          value={title}
+          onChange={(e) => onTextChange(e, 'title')}></input>
+        <textarea
+          className='h-[90%] w-full resize-none outline-none'
+          rows={5}
+          onChange={(e) => onTextChange(e, 'desc')}
+          value={desc}></textarea>
       </div>
-      {openColorPicker && <HexColorPicker className='absolute' color={color} onChange={handleColor} />}
+      {openColorPicker && (
+        <div ref={colorSelectRef} className='h-fit w-fit'>
+          <HexColorPicker className={'absolute z-50'} color={color} onChange={handleColor} />
+        </div>
+      )}
       <div className='relative h-10 border-t'>
-        <div className='peer-target: relative flex w-fit gap-2 p-2'>
+        <div className='relative flex w-fit gap-2 p-2'>
           <div onClick={() => handleColor('#fff24b')} className='h-6 w-6 rounded border bg-[#fff24b]'></div>
           <div onClick={() => handleColor('#66a3ff')} className='h-6 w-6 rounded border bg-[#66a3ff]'></div>
           <div onClick={() => handleColor('#ff215d')} className='h-6 w-6 rounded border bg-[#ff215d]'></div>
           <div onClick={() => handleColor('#a940fc')} className='h-6 w-6 rounded border bg-[#a940fc]'></div>
           <div onClick={() => handleColor('#58ff4a')} className='h-6 w-6 rounded border bg-[#58ff4a]'></div>
           <div
+            className='cursor-pointer'
             onClick={() => {
               setOpenColorPicker(!openColorPicker)
             }}>
