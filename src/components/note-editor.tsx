@@ -16,21 +16,21 @@ interface EditorProps {
 const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
   const tctx = trpc.useContext()
 
-  const { mutate: deleteNote } = trpc.useMutation(['notes.deleteOneTrashed'], {
+  const { mutate: deleteNote } = trpc.notes.deleteOneTrashed.useMutation({
     onMutate: ({ id }) => {
-      tctx.setQueryData(['notes.getAll'], (oldData) => oldData!.filter((n) => n.id !== id))
+      tctx.notes.getAll.setData((oldData: Note[] | []) => oldData!.filter((n: { id: string }) => n.id !== id))
     },
   })
-  const { mutate: trashNote } = trpc.useMutation(['notes.trash'], {
+  const { mutate: trashNote } = trpc.notes.trash.useMutation({
     onMutate: ({ id }) => {
-      tctx.setQueryData(['notes.getAll'], (oldData) =>
-        oldData!.map((n) => (n.id === id ? { ...n, status: 'TRASHED' } : n))
+      tctx.notes.getAll.setData((oldData: Note[] | []) =>
+        oldData!.map((n: { id: any }) => (n.id === id ? { ...n, status: 'TRASHED' } : n))
       )
     },
   })
-  const { mutate: updateNote } = trpc.useMutation(['notes.update'], {
+  const { mutate: updateNote } = trpc.notes.update.useMutation({
     onMutate: ({ id, title, description, color }) => {
-      tctx.setQueryData(['notes.getAll'], (oldData) =>
+      tctx.notes.getAll.setData((oldData: Note[] | []) =>
         oldData!.map((n) =>
           n.id === id
             ? { ...n, title: title || n.title, description: description || n.description, color: color || n.color }
@@ -60,10 +60,13 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
     let d = type === 'desc' ? e.target.value : desc
     setTitle(t)
     setDesc(d)
-    tctx.setQueryData(['notes.getAll'], (oldData) =>
+    tctx.notes.getAll.setData((oldData: Note[] | []) =>
       oldData!
-        .map((n) => (n.id === note.id ? { ...n, title:t, description: d, updatedAt: new Date() } : n))
-        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+        .map((n) => (n.id === note.id ? { ...n, title: t, description: d, updatedAt: new Date() } : n))
+        .sort(
+          (a: { updatedAt: { getTime: () => number } }, b: { updatedAt: { getTime: () => number } }) =>
+            b.updatedAt.getTime() - a.updatedAt.getTime()
+        )
     )
     typingTimeout.current = setTimeout(() => {
       updateNote({ id, title: t, description: d })
@@ -75,10 +78,13 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
   const handleColor = (color: string) => {
     if (colorTimeout.current) clearTimeout(colorTimeout.current)
     setColor(color)
-    tctx.setQueryData(['notes.getAll'], (oldData) =>
+    tctx.notes.getAll.setData((oldData: Note[] | []) =>
       oldData!
         .map((n) => (n.id === note.id ? { ...n, color, updatedAt: new Date() } : n))
-        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+        .sort(
+          (a: { updatedAt: { getTime: () => number } }, b: { updatedAt: { getTime: () => number } }) =>
+            b.updatedAt.getTime() - a.updatedAt.getTime()
+        )
     )
     colorTimeout.current = setTimeout(() => {
       updateNote({ id: note.id, color: color })

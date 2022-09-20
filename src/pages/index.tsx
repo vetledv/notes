@@ -19,38 +19,38 @@ import NoteEditor from '@/components/note-editor'
 import NoteTile from '@/components/note-tile'
 import SideNav from '@/components/sidenav'
 import { trpc } from '@/utils/trpc'
-import { getUnstableSession } from '@server/unstable-get-session'
 import useWindowResize from '@/hooks/use-window-resize'
+import { getServerAuthSession } from '@server/unstable-get-session'
 
 const HomeContent: React.FC = () => {
   const session = useSession()
   const tctx = trpc.useContext()
 
-  const { data: notes } = trpc.useQuery(['notes.getAll'], {
-    enabled: !!session.data,
+  const { data: notes } = trpc.notes.getAll.useQuery(undefined, {
+    enabled: session.status === 'authenticated',
   })
 
-  const createTodo = trpc.useMutation(['notes.create'], {
+  const createTodo = trpc.notes.create.useMutation({
     onMutate(variables) {
-      tctx.cancelQuery(['notes.getAll'])
+      tctx.notes.getAll.cancel()
       const newNote = {
         ...variables,
         userId: session!.data!.user!.id,
       } as Note
-      tctx.setQueryData(['notes.getAll'], (data) => {
+      tctx.notes.getAll.setData((data: Note[]) => {
         if (!data) return [newNote]
         return [newNote, ...data]
       })
     },
   })
 
-  const { mutate: emptyTrash } = trpc.useMutation(['notes.deleteAllTrashed'], {
+  const { mutate: emptyTrash } = trpc.notes.deleteAllTrashed.useMutation({
     onMutate: () => {
-      tctx.cancelQuery(['notes.getAll'])
-      tctx.setQueryData(['notes.getAll'], (oldData) => oldData!.filter((n) => n.status !== 'TRASHED'))
+      tctx.notes.getAll.cancel()
+      tctx.notes.getAll.setData((oldData: any) => oldData!.filter((n: { status: string }) => n.status !== 'TRASHED'))
     },
     onSettled() {
-      tctx.invalidateQueries(['notes.getAll'])
+      tctx.notes.getAll.invalidate()
     },
   })
 
@@ -62,7 +62,7 @@ const HomeContent: React.FC = () => {
   const handleCreateTodo = () => {
     createTodo.mutate({
       id: cuid(),
-      title: "New Note",
+      title: 'New Note',
       description: '',
       color: '#D8E2DC',
       status: 'IN_PROGRESS',
@@ -160,7 +160,7 @@ const Home: NextPage = () => {
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   return {
     props: {
-      session: await getUnstableSession(ctx),
+      session: await getServerAuthSession(ctx),
     },
   }
 }
