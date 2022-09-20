@@ -6,19 +6,6 @@ interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const NoteTile: React.FC<NoteProps> = ({ note, ...props }) => {
-  /**
-   * @link https://stackoverflow.com/a/3943023
-   */
-  // const calculateTextColor = () => {
-  //   const red = parseInt(note.color.slice(1, 3), 16) / 255
-  //   const green = parseInt(note.color.slice(3, 5), 16) / 255
-  //   const blue = parseInt(note.color.slice(5, 7), 16) / 255
-  //   const brightness = (red * 299 + green * 587 + blue * 114) / 1000
-  //   return brightness > 0.5 ? '#000' : '#fff'
-  // }
-  // const [title, setTitle] = useState(note.title)
-  // const [color, setColor] = useState(note.color)
-
   return (
     <div
       key={note.id}

@@ -15,4 +15,4 @@ const hasSession = t.middleware(async ({ next, ctx }) => {
     },
   })
 })
-export const userProtectedProcedure = t.procedure.use(hasSession);
+export const userProtectedProcedure = t.procedure.use(hasSession)

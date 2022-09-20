@@ -13,4 +13,4 @@ const MyApp: AppType = ({ Component, pageProps: { session, ...pageProps } }) => 
   )
 }
 
-export default trpc.withTRPC(MyApp);
+export default trpc.withTRPC(MyApp)

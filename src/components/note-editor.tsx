@@ -1,7 +1,6 @@
 import useClickOutside from '@/hooks/use-click-outside'
 import { trpc } from '@/utils/trpc'
 import { Note } from '@prisma/client'
-import clsx from 'clsx'
 import { useEffect, useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { AiOutlinePlus } from 'react-icons/ai'

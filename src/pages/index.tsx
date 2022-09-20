@@ -18,8 +18,8 @@ import Login from '@/components/login'
 import NoteEditor from '@/components/note-editor'
 import NoteTile from '@/components/note-tile'
 import SideNav from '@/components/sidenav'
-import { trpc } from '@/utils/trpc'
 import useWindowResize from '@/hooks/use-window-resize'
+import { trpc } from '@/utils/trpc'
 import { getServerAuthSession } from '@server/unstable-get-session'
 
 const HomeContent: React.FC = () => {
