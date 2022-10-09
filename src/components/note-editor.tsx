@@ -115,7 +115,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
       </div>
       <div className='relative h-full space-y-2 py-2 px-4'>
         <input
-          className='h-fit w-full bg-slate-100 text-2xl outline-none'
+          className='h-fit w-full text-2xl outline-none'
           placeholder='Title'
           value={title}
           onChange={(e) => onTextChange(e, 'title')}></input>
