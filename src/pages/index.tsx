@@ -36,7 +36,7 @@ const HomeContent: React.FC = () => {
       const newNote = {
         ...variables,
         userId: session!.data!.user!.id,
-      } as Note
+      }
       tctx.notes.getAll.setData((data: Note[]) => {
         if (!data) return [newNote]
         return [newNote, ...data]
@@ -69,18 +69,6 @@ const HomeContent: React.FC = () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     })
-  }
-
-  const notesByStatus = () => {
-    if (!notes) return []
-    return notes.filter((note) => note.status === noteFilter)
-  }
-
-  const renderNoteEditor = () => {
-    if (!notes) return null
-    return notes
-      .filter((note) => note.id === activeNote)
-      .map((note) => <NoteEditor key={note.id} note={note} setOpenNote={setActiveNote} />)
   }
 
   if (!session.data) return <Login />
@@ -123,8 +111,10 @@ const HomeContent: React.FC = () => {
           />
         </span>
         <AutoAnimate className='relative flex h-full max-h-full w-full flex-col overflow-y-auto'>
-          {notesByStatus().length > 0 ? (
-            notesByStatus().map((note) => <NoteTile key={note.id} note={note} onClick={() => setActiveNote(note.id)} />)
+          {notes.filter((note) => note.status === noteFilter).length > 0 ? (
+            notes
+              .filter((note) => note.status === noteFilter)
+              .map((note) => <NoteTile key={note.id} note={note} onClick={() => setActiveNote(note.id)} />)
           ) : (
             <div className='m-auto'>
               {noteFilter === 'IN_PROGRESS' ? <div>You have no notes</div> : <div>Trash empty</div>}
@@ -139,7 +129,11 @@ const HomeContent: React.FC = () => {
           </Button>
         )}
       </div>
-      {renderNoteEditor()}
+      {notes
+        .filter((note) => note.id === activeNote)
+        .map((note) => (
+          <NoteEditor key={note.id} note={note} setOpenNote={setActiveNote} />
+        ))}
     </div>
   )
 }
