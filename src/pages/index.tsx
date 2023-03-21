@@ -14,13 +14,30 @@ import { TbEdit, TbNotes } from 'react-icons/tb'
 import AutoAnimate from '@/components/auto-animate'
 import { Button } from '@/components/button'
 import LoadingSkeleton from '@/components/loading-skeleton'
-import Login from '@/components/login'
 import NoteEditor from '@/components/note-editor'
 import NoteTile from '@/components/note-tile'
 import SideNav from '@/components/sidenav'
 import useWindowResize from '@/hooks/use-window-resize'
 import { trpc } from '@/utils/trpc'
 import { getServerAuthSession } from '@server/unstable-get-session'
+import { NoteFilters, type NoteFilter } from '@/utils/note-filter'
+
+export async function getServerSideProps(ctx: GetServerSidePropsContext) {
+  const session = await getServerAuthSession(ctx)
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/login',
+        permanent: false,
+      },
+    }
+  }
+  return {
+    props: {
+      session: session,
+    },
+  }
+}
 
 const HomeContent: React.FC = () => {
   const session = useSession()
@@ -47,7 +64,7 @@ const HomeContent: React.FC = () => {
   const { mutate: emptyTrash } = trpc.notes.deleteAllTrashed.useMutation({
     onMutate: () => {
       tctx.notes.getAll.cancel()
-      tctx.notes.getAll.setData((oldData: any) => oldData!.filter((n: { status: string }) => n.status !== 'TRASHED'))
+      tctx.notes.getAll.setData((oldData: Note[]) => oldData.filter((n) => n.status !== NoteFilters.TRASHED))
     },
     onSettled() {
       tctx.notes.getAll.invalidate()
@@ -56,7 +73,7 @@ const HomeContent: React.FC = () => {
 
   const windowSize = useWindowResize([])
   const [activeNote, setActiveNote] = useState<string | null>(null)
-  const [noteFilter, setNoteFilter] = useState<'IN_PROGRESS' | 'TRASHED'>('IN_PROGRESS')
+  const [noteFilter, setNoteFilter] = useState<NoteFilter>(NoteFilters.IN_PROGRESS)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const handleCreateTodo = () => {
@@ -65,13 +82,12 @@ const HomeContent: React.FC = () => {
       title: 'New Note',
       description: '',
       color: '#D8E2DC',
-      status: 'IN_PROGRESS',
+      status: NoteFilters.IN_PROGRESS,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
   }
 
-  if (!session.data) return <Login />
   if (!notes) return <LoadingSkeleton />
 
   return (
@@ -82,13 +98,13 @@ const HomeContent: React.FC = () => {
       className='box-border flex w-full overflow-hidden'>
       <SideNav>
         <Button
-          onClick={() => setNoteFilter('IN_PROGRESS')}
+          onClick={() => setNoteFilter(NoteFilters.IN_PROGRESS)}
           className='flex w-full items-center justify-start gap-2 rounded-none border-b px-2 hover:bg-slate-100'>
           <TbNotes className='min-h-[24px] min-w-[24px]' />
           <span className='overflow-hidden whitespace-nowrap'>All Notes</span>
         </Button>
         <Button
-          onClick={() => setNoteFilter('TRASHED')}
+          onClick={() => setNoteFilter(NoteFilters.TRASHED)}
           className='flex w-full items-center justify-start gap-2 rounded-none border-b px-2 hover:bg-slate-100'>
           <HiOutlineTrash className='min-h-[24px] min-w-[24px]' />
           <span className='overflow-hidden whitespace-nowrap'>Trash</span>
@@ -97,7 +113,7 @@ const HomeContent: React.FC = () => {
 
       <div className='relative flex h-full w-full flex-col md:w-80 md:min-w-[320px] md:max-w-xs md:border-r lg:w-96 lg:min-w-[384px] lg:max-w-sm'>
         <div className='flex items-center justify-between border-b p-2'>
-          <div className='w-full text-center'>{noteFilter === 'IN_PROGRESS' ? 'My notes' : 'Trash'}</div>
+          <div className='w-full text-center'>{noteFilter === NoteFilters.IN_PROGRESS ? 'My notes' : 'Trash'}</div>
           <Button className='w-fit bg-transparent px-2 py-2' disabled={createTodo.isLoading} onClick={handleCreateTodo}>
             <TbEdit className='h-6 w-6' />
           </Button>
@@ -117,11 +133,11 @@ const HomeContent: React.FC = () => {
               .map((note) => <NoteTile key={note.id} note={note} onClick={() => setActiveNote(note.id)} />)
           ) : (
             <div className='m-auto'>
-              {noteFilter === 'IN_PROGRESS' ? <div>You have no notes</div> : <div>Trash empty</div>}
+              {noteFilter === NoteFilters.IN_PROGRESS ? <div>You have no notes</div> : <div>Trash empty</div>}
             </div>
           )}
         </AutoAnimate>
-        {noteFilter === 'TRASHED' && (
+        {noteFilter === NoteFilters.TRASHED && (
           <Button
             className='mt-auto h-fit w-full rounded-none border-t bg-white py-4 hover:bg-slate-100'
             onClick={() => emptyTrash()}>
@@ -132,7 +148,7 @@ const HomeContent: React.FC = () => {
       {notes
         .filter((note) => note.id === activeNote)
         .map((note) => (
-          <NoteEditor key={note.id} note={note} setOpenNote={setActiveNote} />
+          <NoteEditor key={note.id} note={note} close={() => setActiveNote(null)} />
         ))}
     </div>
   )
@@ -148,15 +164,6 @@ const Home: NextPage = () => {
       <HomeContent />
     </>
   )
-}
-
-//unstable get session for improved load performance
-export async function getServerSideProps(ctx: GetServerSidePropsContext) {
-  return {
-    props: {
-      session: await getServerAuthSession(ctx),
-    },
-  }
 }
 
 export default Home

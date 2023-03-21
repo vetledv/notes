@@ -7,8 +7,15 @@ import { prisma } from '../../../server/db/client'
 import { env } from '../../../env/server.mjs'
 
 export const authOptions: NextAuthOptions = {
-  // Include user.id on session
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    DiscordProvider({
+      clientId: env.DISCORD_CLIENT_ID,
+      clientSecret: env.DISCORD_CLIENT_SECRET,
+    }),
+  ],
   callbacks: {
+    // Include user.id on session
     session({ session, user }) {
       if (session.user) {
         session.user.id = user.id
@@ -16,15 +23,9 @@ export const authOptions: NextAuthOptions = {
       return session
     },
   },
-  // Configure one or more authentication providers
-  adapter: PrismaAdapter(prisma),
-  providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
-    }),
-    // ...add more providers here
-  ],
+  pages: {
+    signIn: '/login',
+  },
 }
 
 export default NextAuth(authOptions)

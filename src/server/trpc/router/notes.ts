@@ -1,3 +1,4 @@
+import { NoteFilters } from '@/utils/note-filter'
 import { z } from 'zod'
 import { t } from '../trpc'
 import { userProtectedProcedure } from './protected-router'
@@ -23,7 +24,7 @@ export const notesRouter = t.router({
           .string()
           .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
           .optional(),
-        status: z.enum(['IN_PROGRESS', 'TRASHED']).optional(),
+        status: z.nativeEnum(NoteFilters).optional(),
         createdAt: z.date().default(() => new Date()),
         updatedAt: z.date().default(() => new Date()),
       })
@@ -73,7 +74,7 @@ export const notesRouter = t.router({
           id: input.id,
         },
         data: {
-          status: 'TRASHED',
+          status: NoteFilters.TRASHED,
         },
       })
     }),
@@ -94,7 +95,7 @@ export const notesRouter = t.router({
     return await ctx.prisma.note.deleteMany({
       where: {
         userId: ctx.session.user.id,
-        status: 'TRASHED',
+        status: NoteFilters.TRASHED,
       },
     })
   }),

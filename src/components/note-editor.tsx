@@ -1,7 +1,8 @@
 import useClickOutside from '@/hooks/use-click-outside'
 import { trpc } from '@/utils/trpc'
 import { Note } from '@prisma/client'
-import { useEffect, useRef, useState } from 'react'
+import { NoteFilters } from '@/utils/note-filter'
+import { useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { AiOutlinePlus } from 'react-icons/ai'
 import { FaTrash } from 'react-icons/fa'
@@ -9,10 +10,10 @@ import { Button } from './button'
 
 interface EditorProps {
   note: Note
-  setOpenNote: (id: string | null) => void
+  close: () => void
 }
 
-const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
+const NoteEditor: React.FC<EditorProps> = ({ note, close }) => {
   const tctx = trpc.useContext()
 
   const { mutate: deleteNote } = trpc.notes.deleteOneTrashed.useMutation({
@@ -23,7 +24,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
   const { mutate: trashNote } = trpc.notes.trash.useMutation({
     onMutate: ({ id }) => {
       tctx.notes.getAll.setData((oldData: Note[] | []) =>
-        oldData!.map((n: { id: any }) => (n.id === id ? { ...n, status: 'TRASHED' } : n))
+        oldData!.map((n: { id: any }) => (n.id === id ? { ...n, status: NoteFilters.TRASHED } : n))
       )
     },
   })
@@ -62,10 +63,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
     tctx.notes.getAll.setData((oldData: Note[] | []) =>
       oldData!
         .map((n) => (n.id === note.id ? { ...n, title: t, description: d, updatedAt: new Date() } : n))
-        .sort(
-          (a: { updatedAt: { getTime: () => number } }, b: { updatedAt: { getTime: () => number } }) =>
-            b.updatedAt.getTime() - a.updatedAt.getTime()
-        )
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
     )
     typingTimeout.current = setTimeout(() => {
       updateNote({ id, title: t, description: d })
@@ -80,35 +78,24 @@ const NoteEditor: React.FC<EditorProps> = ({ note, setOpenNote }) => {
     tctx.notes.getAll.setData((oldData: Note[] | []) =>
       oldData!
         .map((n) => (n.id === note.id ? { ...n, color, updatedAt: new Date() } : n))
-        .sort(
-          (a: { updatedAt: { getTime: () => number } }, b: { updatedAt: { getTime: () => number } }) =>
-            b.updatedAt.getTime() - a.updatedAt.getTime()
-        )
+        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
     )
     colorTimeout.current = setTimeout(() => {
       updateNote({ id: note.id, color: color })
     }, 500)
   }
 
-  //Reset states when selecting another note
-  useEffect(() => {
-    setDesc(note.description || '')
-    setColor(note.color)
-    setOpenColorPicker(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [note.id])
-
   return (
     <div className='absolute inset-0 z-50 flex w-full flex-col bg-white md:relative'>
       <div className='flex justify-between border-b bg-white p-2'>
-        <Button className='w-fit bg-slate-200' onClick={() => setOpenNote(null)}>
+        <Button className='w-fit bg-slate-200' onClick={close}>
           Close
         </Button>
         <Button
           className='w-fit bg-slate-200'
           onClick={() => {
-            note.status === 'TRASHED' ? deleteNote({ id: note.id }) : trashNote({ id: note.id })
-            setOpenNote(null)
+            note.status === NoteFilters.TRASHED ? deleteNote({ id: note.id }) : trashNote({ id: note.id })
+            close()
           }}>
           <FaTrash />
         </Button>

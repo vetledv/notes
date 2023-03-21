@@ -8,7 +8,7 @@ import { Button } from './button'
 const SideNav = ({ children }: { children: React.ReactNode }) => {
   const [sideNavOpen, setSideNavOpen] = useState(false)
   return (
-    <div
+    <aside
       className={clsx(
         sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-10 min-w-[40px]',
         'flex h-full flex-col border-r transition-width'
@@ -32,7 +32,7 @@ const SideNav = ({ children }: { children: React.ReactNode }) => {
           {sideNavOpen && <p className='overflow-hidden whitespace-nowrap p-2'>Made by dvries </p>}
         </div>
       </div>
-    </div>
+    </aside>
   )
 }
 export default SideNav

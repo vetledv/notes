@@ -1,6 +1,6 @@
+import { Button } from '@/components/button'
 import { signIn } from 'next-auth/react'
 import { FaDiscord } from 'react-icons/fa'
-import { Button } from './button'
 
 const Login = () => {
   return (
@@ -12,7 +12,9 @@ const Login = () => {
         </div>
         <Button
           onClick={() => {
-            signIn('discord')
+            signIn('discord', {
+              callbackUrl: '/',
+            })
           }}
           className='flex w-fit items-center justify-center gap-2 bg-[#37393e] py-4 text-lg text-[#dcddde]'>
           Log in with Discord
