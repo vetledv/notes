@@ -1,11 +1,10 @@
 import type { Note } from '@prisma/client'
 
 interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
-  as?: string
   note: Note
 }
 
-const NoteTile: React.FC<NoteProps> = ({ note, ...props }) => {
+export const NoteTile: React.FC<NoteProps> = ({ note, ...props }) => {
   return (
     <div
       key={note.id}
@@ -26,5 +25,3 @@ const NoteTile: React.FC<NoteProps> = ({ note, ...props }) => {
     </div>
   )
 }
-
-export default NoteTile

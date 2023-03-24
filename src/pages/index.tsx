@@ -1,26 +1,23 @@
 import type { Note } from '@prisma/client'
 import type { GetServerSidePropsContext, NextPage } from 'next'
-
-import cuid from 'cuid'
 import { useSession } from 'next-auth/react'
 import Head from 'next/head'
 import { useRef, useState } from 'react'
-
-//icons
 import { BiSearchAlt } from 'react-icons/bi'
 import { HiOutlineTrash } from 'react-icons/hi'
 import { TbEdit, TbNotes } from 'react-icons/tb'
+import { createId } from '@paralleldrive/cuid2'
 
-import AutoAnimate from '@/components/auto-animate'
-import { Button } from '@/components/button'
-import LoadingSkeleton from '@/components/loading-skeleton'
-import NoteEditor from '@/components/note-editor'
-import NoteTile from '@/components/note-tile'
-import SideNav from '@/components/sidenav'
-import useWindowResize from '@/hooks/use-window-resize'
-import { trpc } from '@/utils/trpc'
-import { getServerAuthSession } from '@server/unstable-get-session'
-import { NoteFilters, type NoteFilter } from '@/utils/note-filter'
+import { AutoAnimate } from '~/components/auto-animate'
+import { Button } from '~/components/button'
+import { LoadingSkeleton } from '~/components/loading-skeleton'
+import { NoteEditor } from '~/components/note-editor'
+import { NoteTile } from '~/components/note-tile'
+import { SideNav } from '~/components/sidenav'
+import { useWindowResize } from '~/hooks/use-window-resize'
+import { getServerAuthSession } from '~/server/auth'
+import { api } from '~/utils/api'
+import { NoteFilters, type NoteFilter } from '~/utils/note-filter'
 
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   const session = await getServerAuthSession(ctx)
@@ -41,30 +38,36 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
 
 const HomeContent: React.FC = () => {
   const session = useSession()
-  const tctx = trpc.useContext()
+  const tctx = api.useContext()
 
-  const { data: notes } = trpc.notes.getAll.useQuery(undefined, {
+  const notesQuery = api.notes.getAll.useQuery(undefined, {
     enabled: session.status === 'authenticated',
   })
 
-  const createTodo = trpc.notes.create.useMutation({
+  const createTodo = api.notes.create.useMutation({
     onMutate(variables) {
       tctx.notes.getAll.cancel()
-      const newNote = {
-        ...variables,
-        userId: session!.data!.user!.id,
+      if (!session.data?.user.id) {
+        throw new Error('User not authenticated')
       }
-      tctx.notes.getAll.setData((data: Note[]) => {
-        if (!data) return [newNote]
-        return [newNote, ...data]
+      const newNote: Note = {
+        ...variables,
+        color: variables.color || '#D8E2DC',
+        status: NoteFilters.IN_PROGRESS,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: session.data.user.id,
+      }
+      tctx.notes.getAll.setData(undefined, (oldData) => {
+        return oldData ? [newNote, ...oldData] : [newNote]
       })
     },
   })
 
-  const { mutate: emptyTrash } = trpc.notes.deleteAllTrashed.useMutation({
+  const { mutate: emptyTrash } = api.notes.deleteAllTrashed.useMutation({
     onMutate: () => {
       tctx.notes.getAll.cancel()
-      tctx.notes.getAll.setData((oldData: Note[]) => oldData.filter((n) => n.status !== NoteFilters.TRASHED))
+      tctx.notes.getAll.setData(undefined, (oldData) => oldData?.filter((n) => n.status !== NoteFilters.TRASHED))
     },
     onSettled() {
       tctx.notes.getAll.invalidate()
@@ -78,7 +81,7 @@ const HomeContent: React.FC = () => {
 
   const handleCreateTodo = () => {
     createTodo.mutate({
-      id: cuid(),
+      id: createId(),
       title: 'New Note',
       description: '',
       color: '#D8E2DC',
@@ -88,7 +91,9 @@ const HomeContent: React.FC = () => {
     })
   }
 
-  if (!notes) return <LoadingSkeleton />
+  if (notesQuery.isError) return <div>Failed to load notes: {notesQuery.error.message}</div>
+
+  if (notesQuery.isLoading) return <LoadingSkeleton />
 
   return (
     <div
@@ -110,8 +115,7 @@ const HomeContent: React.FC = () => {
           <span className='overflow-hidden whitespace-nowrap'>Trash</span>
         </Button>
       </SideNav>
-
-      <div className='relative flex h-full w-full flex-col md:w-80 md:min-w-[320px] md:max-w-xs md:border-r lg:w-96 lg:min-w-[384px] lg:max-w-sm'>
+      <aside className='relative flex h-full w-full flex-col md:w-80 md:min-w-[320px] md:max-w-xs md:border-r lg:w-96 lg:min-w-[384px] lg:max-w-sm'>
         <div className='flex items-center justify-between border-b p-2'>
           <div className='w-full text-center'>{noteFilter === NoteFilters.IN_PROGRESS ? 'My notes' : 'Trash'}</div>
           <Button className='w-fit bg-transparent px-2 py-2' disabled={createTodo.isLoading} onClick={handleCreateTodo}>
@@ -127,8 +131,8 @@ const HomeContent: React.FC = () => {
           />
         </span>
         <AutoAnimate className='relative flex h-full max-h-full w-full flex-col overflow-y-auto'>
-          {notes.filter((note) => note.status === noteFilter).length > 0 ? (
-            notes
+          {notesQuery.data.filter((note) => note.status === noteFilter).length > 0 ? (
+            notesQuery.data
               .filter((note) => note.status === noteFilter)
               .map((note) => <NoteTile key={note.id} note={note} onClick={() => setActiveNote(note.id)} />)
           ) : (
@@ -144,11 +148,11 @@ const HomeContent: React.FC = () => {
             Empty Trash
           </Button>
         )}
-      </div>
-      {notes
+      </aside>
+      {notesQuery.data
         .filter((note) => note.id === activeNote)
         .map((note) => (
-          <NoteEditor key={note.id} note={note} close={() => setActiveNote(null)} />
+          <NoteEditor key={note.id} note={note} onClose={() => setActiveNote(null)} />
         ))}
     </div>
   )

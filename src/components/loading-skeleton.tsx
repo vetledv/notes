@@ -1,9 +1,9 @@
-import AutoAnimate from '@/components/auto-animate'
-import useWindowResize from '@/hooks/use-window-resize'
 import { BiMenuAltLeft, BiSearchAlt } from 'react-icons/bi'
 import { HiOutlineTrash } from 'react-icons/hi'
 import { MdLogout } from 'react-icons/md'
 import { TbEdit, TbNotes } from 'react-icons/tb'
+import { AutoAnimate } from '~/components/auto-animate'
+import { useWindowResize } from '~/hooks/use-window-resize'
 import { Button } from './button'
 
 const LoadingNote = () => {
@@ -18,24 +18,15 @@ const LoadingNote = () => {
   )
 }
 
-const LoadingSkeleton = () => {
+export const LoadingSkeleton = () => {
   const windowSize = useWindowResize([])
-
-  const loadingNotes = () => {
-    let notes: JSX.Element[] = []
-    for (let i = 0; i < 5; i++) {
-      notes.push(<LoadingNote key={i} />)
-    }
-    return notes
-  }
-
   return (
     <div
       style={{
         height: windowSize.height,
       }}
       className='box-border flex w-full overflow-hidden'>
-      <div className='flex h-full w-10 min-w-[40px] flex-col border-r transition-width'>
+      <nav className='flex h-full w-14 min-w-[40px] flex-col border-r transition-width'>
         <Button className='rounded-none border-b px-2 py-4 hover:bg-slate-100'>
           <BiMenuAltLeft className='h-6 w-6' />
         </Button>
@@ -54,8 +45,8 @@ const LoadingSkeleton = () => {
             <MdLogout className='min-h-[24px] min-w-[24px]' />
           </Button>
         </div>
-      </div>
-      <div className='relative flex h-full w-full flex-col md:w-80 md:min-w-[320px] md:max-w-xs md:border-r lg:w-96 lg:min-w-[384px] lg:max-w-sm'>
+      </nav>
+      <aside className='relative flex h-full w-full flex-col md:w-80 md:min-w-[320px] md:max-w-xs md:border-r lg:w-96 lg:min-w-[384px] lg:max-w-sm'>
         <div className='flex items-center justify-between border-b p-2'>
           <div className='w-full text-center'>My notes</div>
           <Button className='w-fit bg-transparent px-2 py-2'>
@@ -70,10 +61,11 @@ const LoadingSkeleton = () => {
           />
         </span>
         <AutoAnimate className='relative flex h-full max-h-full w-full flex-col overflow-y-auto overflow-x-hidden'>
-          {loadingNotes()}
+          {new Array(5).fill(0).map((_, i) => (
+            <LoadingNote key={i} />
+          ))}
         </AutoAnimate>
-      </div>
+      </aside>
     </div>
   )
 }
-export default LoadingSkeleton

@@ -6,10 +6,10 @@ interface State {
 }
 
 /**
- * Hook to get the current window size
+ * Gets current window size
  * @param deps useEffect dependencies
  */
-const useWindowResize = (deps: any[]) => {
+export const useWindowResize = (deps: any[]) => {
   const [windowSize, setWindowSize] = useState<State>({
     width: undefined,
     height: undefined,
@@ -33,5 +33,3 @@ const useWindowResize = (deps: any[]) => {
 
   return windowSize
 }
-
-export default useWindowResize

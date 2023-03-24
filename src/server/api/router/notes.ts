@@ -1,10 +1,9 @@
-import { NoteFilters } from '@/utils/note-filter'
+import { NoteFilters } from '~/utils/note-filter'
 import { z } from 'zod'
-import { t } from '../trpc'
-import { userProtectedProcedure } from './protected-router'
+import { createTRPCRouter, protectedProcedure } from '../trpc'
 
-export const notesRouter = t.router({
-  getAll: userProtectedProcedure.query(async ({ ctx }) => {
+export const notesRouter = createTRPCRouter({
+  getAll: protectedProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.note.findMany({
       where: {
         userId: ctx.session.user.id,
@@ -14,7 +13,7 @@ export const notesRouter = t.router({
       },
     })
   }),
-  create: userProtectedProcedure
+  create: protectedProcedure
     .input(
       z.object({
         id: z.string().cuid(),
@@ -38,7 +37,7 @@ export const notesRouter = t.router({
         },
       })
     }),
-  update: userProtectedProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.string().cuid(),
@@ -62,7 +61,7 @@ export const notesRouter = t.router({
         },
       })
     }),
-  trash: userProtectedProcedure
+  trash: protectedProcedure
     .input(
       z.object({
         id: z.string().cuid(),
@@ -78,7 +77,7 @@ export const notesRouter = t.router({
         },
       })
     }),
-  deleteOneTrashed: userProtectedProcedure
+  deleteOneTrashed: protectedProcedure
     .input(
       z.object({
         id: z.string().cuid(),
@@ -91,7 +90,7 @@ export const notesRouter = t.router({
         },
       })
     }),
-  deleteAllTrashed: userProtectedProcedure.mutation(async ({ ctx }) => {
+  deleteAllTrashed: protectedProcedure.mutation(async ({ ctx }) => {
     return await ctx.prisma.note.deleteMany({
       where: {
         userId: ctx.session.user.id,

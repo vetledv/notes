@@ -1,36 +1,36 @@
-import useClickOutside from '@/hooks/use-click-outside'
-import { trpc } from '@/utils/trpc'
 import { Note } from '@prisma/client'
-import { NoteFilters } from '@/utils/note-filter'
 import { useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { AiOutlinePlus } from 'react-icons/ai'
 import { FaTrash } from 'react-icons/fa'
 import { Button } from './button'
+import { api } from '~/utils/api'
+import { NoteFilters } from '~/utils/note-filter'
+import { useClickOutside } from '~/hooks/use-click-outside'
 
 interface EditorProps {
   note: Note
-  close: () => void
+  onClose: () => void
 }
 
-const NoteEditor: React.FC<EditorProps> = ({ note, close }) => {
-  const tctx = trpc.useContext()
+export const NoteEditor: React.FC<EditorProps> = ({ note, onClose }) => {
+  const tctx = api.useContext()
 
-  const { mutate: deleteNote } = trpc.notes.deleteOneTrashed.useMutation({
+  const { mutate: deleteNote } = api.notes.deleteOneTrashed.useMutation({
     onMutate: ({ id }) => {
-      tctx.notes.getAll.setData((oldData: Note[] | []) => oldData!.filter((n: { id: string }) => n.id !== id))
+      tctx.notes.getAll.setData(undefined, (oldData) => oldData!.filter((n: { id: string }) => n.id !== id))
     },
   })
-  const { mutate: trashNote } = trpc.notes.trash.useMutation({
+  const { mutate: trashNote } = api.notes.trash.useMutation({
     onMutate: ({ id }) => {
-      tctx.notes.getAll.setData((oldData: Note[] | []) =>
-        oldData!.map((n: { id: any }) => (n.id === id ? { ...n, status: NoteFilters.TRASHED } : n))
+      tctx.notes.getAll.setData(undefined, (oldData) =>
+        oldData!.map((n) => (n.id === id ? { ...n, status: NoteFilters.TRASHED } : n))
       )
     },
   })
-  const { mutate: updateNote } = trpc.notes.update.useMutation({
+  const { mutate: updateNote } = api.notes.update.useMutation({
     onMutate: ({ id, title, description, color }) => {
-      tctx.notes.getAll.setData((oldData: Note[] | []) =>
+      tctx.notes.getAll.setData(undefined, (oldData) =>
         oldData!.map((n) =>
           n.id === id
             ? { ...n, title: title || n.title, description: description || n.description, color: color || n.color }
@@ -60,7 +60,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, close }) => {
     let d = type === 'desc' ? e.target.value : desc
     setTitle(t)
     setDesc(d)
-    tctx.notes.getAll.setData((oldData: Note[] | []) =>
+    tctx.notes.getAll.setData(undefined, (oldData) =>
       oldData!
         .map((n) => (n.id === note.id ? { ...n, title: t, description: d, updatedAt: new Date() } : n))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
@@ -75,7 +75,7 @@ const NoteEditor: React.FC<EditorProps> = ({ note, close }) => {
   const handleColor = (color: string) => {
     if (colorTimeout.current) clearTimeout(colorTimeout.current)
     setColor(color)
-    tctx.notes.getAll.setData((oldData: Note[] | []) =>
+    tctx.notes.getAll.setData(undefined, (oldData) =>
       oldData!
         .map((n) => (n.id === note.id ? { ...n, color, updatedAt: new Date() } : n))
         .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
@@ -86,16 +86,16 @@ const NoteEditor: React.FC<EditorProps> = ({ note, close }) => {
   }
 
   return (
-    <div className='absolute inset-0 z-50 flex w-full flex-col bg-white md:relative'>
+    <main className='absolute inset-0 z-50 flex w-full flex-col bg-white md:relative'>
       <div className='flex justify-between border-b bg-white p-2'>
-        <Button className='w-fit bg-slate-200' onClick={close}>
+        <Button className='w-fit bg-slate-200' onClick={onClose}>
           Close
         </Button>
         <Button
           className='w-fit bg-slate-200'
           onClick={() => {
             note.status === NoteFilters.TRASHED ? deleteNote({ id: note.id }) : trashNote({ id: note.id })
-            close()
+            onClose()
           }}>
           <FaTrash />
         </Button>
@@ -133,7 +133,6 @@ const NoteEditor: React.FC<EditorProps> = ({ note, close }) => {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
-export default NoteEditor

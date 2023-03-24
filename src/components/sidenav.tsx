@@ -5,12 +5,12 @@ import { BiMenuAltLeft } from 'react-icons/bi'
 import { MdLogout } from 'react-icons/md'
 import { Button } from './button'
 
-const SideNav = ({ children }: { children: React.ReactNode }) => {
+export const SideNav = ({ children }: { children: React.ReactNode }) => {
   const [sideNavOpen, setSideNavOpen] = useState(false)
   return (
-    <aside
+    <nav
       className={clsx(
-        sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-10 min-w-[40px]',
+        sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-14 min-w-[40px]',
         'flex h-full flex-col border-r transition-width'
       )}>
       <Button
@@ -32,7 +32,6 @@ const SideNav = ({ children }: { children: React.ReactNode }) => {
           {sideNavOpen && <p className='overflow-hidden whitespace-nowrap p-2'>Made by dvries </p>}
         </div>
       </div>
-    </aside>
+    </nav>
   )
 }
-export default SideNav
