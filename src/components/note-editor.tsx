@@ -18,23 +18,28 @@ export const NoteEditor: React.FC<EditorProps> = ({ note, onClose }) => {
 
   const { mutate: deleteNote } = api.notes.deleteOneTrashed.useMutation({
     onMutate: ({ id }) => {
-      tctx.notes.getAll.setData(undefined, (oldData) => oldData!.filter((n: { id: string }) => n.id !== id))
+      tctx.notes.getAll.setData(undefined, (oldData) => oldData?.filter((note) => note.id !== id))
     },
   })
   const { mutate: trashNote } = api.notes.trash.useMutation({
     onMutate: ({ id }) => {
       tctx.notes.getAll.setData(undefined, (oldData) =>
-        oldData!.map((n) => (n.id === id ? { ...n, status: NoteFilters.TRASHED } : n))
+        oldData?.map((note) => (note.id === id ? { ...note, status: NoteFilters.TRASHED } : note))
       )
     },
   })
   const { mutate: updateNote } = api.notes.update.useMutation({
     onMutate: ({ id, title, description, color }) => {
       tctx.notes.getAll.setData(undefined, (oldData) =>
-        oldData!.map((n) =>
-          n.id === id
-            ? { ...n, title: title || n.title, description: description || n.description, color: color || n.color }
-            : { ...n }
+        oldData?.map((note) =>
+          note.id === id
+            ? {
+                ...note,
+                title: title || note.title,
+                description: description || note.description,
+                color: color || note.color,
+              }
+            : note
         )
       )
     },
