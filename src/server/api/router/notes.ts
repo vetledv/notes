@@ -2,6 +2,8 @@ import { NoteFilters } from '~/utils/note-filter'
 import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
+const colorRegExp = new RegExp(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
+
 export const notesRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
     return await ctx.prisma.note.findMany({
@@ -21,7 +23,7 @@ export const notesRouter = createTRPCRouter({
         description: z.string().nullable(),
         color: z
           .string()
-          .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
+          .regex(colorRegExp)
           .optional(),
         status: z.nativeEnum(NoteFilters).optional(),
         createdAt: z.date().default(() => new Date()),
@@ -45,7 +47,7 @@ export const notesRouter = createTRPCRouter({
         description: z.string().nullable().optional(),
         color: z
           .string()
-          .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
+          .regex(colorRegExp)
           .optional(),
       })
     )
