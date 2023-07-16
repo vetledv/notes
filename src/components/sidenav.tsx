@@ -10,7 +10,7 @@ export const SideNav = ({ children }: { children: React.ReactNode }) => {
   return (
     <nav
       className={clsx(
-        sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-14 min-w-[40px]',
+        sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-14 min-w-[56px]',
         'flex h-full flex-col border-r transition-width'
       )}>
       <Button
@@ -29,7 +29,6 @@ export const SideNav = ({ children }: { children: React.ReactNode }) => {
             <MdLogout className='min-h-[24px] min-w-[24px]' />
             {sideNavOpen && <span className='overflow-hidden whitespace-nowrap'>Log Out</span>}
           </Button>
-          {sideNavOpen && <p className='overflow-hidden whitespace-nowrap p-2'>Made by dvries </p>}
         </div>
       </div>
     </nav>

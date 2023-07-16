@@ -1,13 +1,11 @@
 import type { Note } from '@prisma/client'
-import type { GetServerSidePropsContext, NextPage } from 'next'
+import type { GetServerSidePropsContext, InferGetServerSidePropsType, NextPage } from 'next'
 import { useSession } from 'next-auth/react'
 import Head from 'next/head'
-import { useRef, useState } from 'react'
-import { BiSearchAlt } from 'react-icons/bi'
+import { useState } from 'react'
 import { HiOutlineTrash } from 'react-icons/hi'
 import { TbEdit, TbNotes } from 'react-icons/tb'
 import { createId } from '@paralleldrive/cuid2'
-
 import { AutoAnimate } from '~/components/auto-animate'
 import { Button } from '~/components/button'
 import { LoadingSkeleton } from '~/components/loading-skeleton'
@@ -36,7 +34,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   }
 }
 
-const HomeContent: React.FC = () => {
+function HomeContent() {
   const session = useSession()
   const tctx = api.useContext()
 
@@ -50,14 +48,15 @@ const HomeContent: React.FC = () => {
       if (!session.data?.user.id) {
         throw new Error('User not authenticated')
       }
-      const newNote: Note = {
+      const newNote = {
         ...variables,
         color: variables.color || '#D8E2DC',
         status: NoteFilters.IN_PROGRESS,
         createdAt: new Date(),
         updatedAt: new Date(),
         userId: session.data.user.id,
-      }
+      } satisfies Note
+
       tctx.notes.getAll.setData(undefined, (oldData) => {
         return oldData ? [newNote, ...oldData] : [newNote]
       })
@@ -77,7 +76,6 @@ const HomeContent: React.FC = () => {
   const windowSize = useWindowResize([])
   const [activeNote, setActiveNote] = useState<string | null>(null)
   const [noteFilter, setNoteFilter] = useState<NoteFilter>(NoteFilters.IN_PROGRESS)
-  const searchRef = useRef<HTMLInputElement>(null)
 
   const handleCreateTodo = () => {
     createTodo.mutate({
@@ -92,7 +90,6 @@ const HomeContent: React.FC = () => {
   }
 
   if (notesQuery.isError) return <div>Failed to load notes: {notesQuery.error.message}</div>
-
   if (notesQuery.isLoading) return <LoadingSkeleton />
 
   return (
@@ -106,30 +103,22 @@ const HomeContent: React.FC = () => {
           onClick={() => setNoteFilter(NoteFilters.IN_PROGRESS)}
           className='flex w-full items-center justify-start gap-2 rounded-none border-b px-2 hover:bg-slate-100'>
           <TbNotes className='min-h-[24px] min-w-[24px]' />
-          <span className='overflow-hidden whitespace-nowrap'>All Notes</span>
+          <p className='overflow-hidden whitespace-nowrap'>All Notes</p>
         </Button>
         <Button
           onClick={() => setNoteFilter(NoteFilters.TRASHED)}
           className='flex w-full items-center justify-start gap-2 rounded-none border-b px-2 hover:bg-slate-100'>
           <HiOutlineTrash className='min-h-[24px] min-w-[24px]' />
-          <span className='overflow-hidden whitespace-nowrap'>Trash</span>
+          <p className='overflow-hidden whitespace-nowrap'>Trash</p>
         </Button>
       </SideNav>
       <aside className='relative flex h-full w-full flex-col md:w-80 md:min-w-[320px] md:max-w-xs md:border-r lg:w-96 lg:min-w-[384px] lg:max-w-sm'>
         <div className='flex items-center justify-between border-b p-2'>
-          <div className='w-full text-center'>{noteFilter === NoteFilters.IN_PROGRESS ? 'My notes' : 'Trash'}</div>
+          <p className='w-full text-center'>{noteFilter === NoteFilters.IN_PROGRESS ? 'My notes' : 'Trash'}</p>
           <Button className='w-fit bg-transparent px-2 py-2' disabled={createTodo.isLoading} onClick={handleCreateTodo}>
             <TbEdit className='h-6 w-6' />
           </Button>
         </div>
-        <span onClick={() => searchRef.current?.focus()} className='relative cursor-text'>
-          <BiSearchAlt className='absolute inset-y-0 left-4 my-auto h-6 w-6' />
-          <input
-            ref={searchRef}
-            className='w-full border-b py-2 pl-12 pr-4 outline-none placeholder:italic'
-            placeholder='Search notes (not implemented)'
-          />
-        </span>
         <AutoAnimate className='relative flex h-full max-h-full w-full flex-col overflow-y-auto'>
           {notesQuery.data.filter((note) => note.status === noteFilter).length > 0 ? (
             notesQuery.data
@@ -158,7 +147,8 @@ const HomeContent: React.FC = () => {
   )
 }
 
-const Home: NextPage = () => {
+const Home: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (props) => {
+  const session = useSession()
   return (
     <>
       <Head>

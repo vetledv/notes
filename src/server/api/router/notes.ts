@@ -2,7 +2,7 @@ import { NoteFilters } from '~/utils/note-filter'
 import { z } from 'zod'
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
-const colorRegExp = new RegExp(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
+const hexColorRegExp = new RegExp(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
 
 export const notesRouter = createTRPCRouter({
   getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -18,13 +18,10 @@ export const notesRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        id: z.string().cuid(),
+        id: z.string().cuid2(),
         title: z.string().nullable(),
         description: z.string().nullable(),
-        color: z
-          .string()
-          .regex(colorRegExp)
-          .optional(),
+        color: z.string().regex(hexColorRegExp).optional(),
         status: z.nativeEnum(NoteFilters).optional(),
         createdAt: z.date().default(() => new Date()),
         updatedAt: z.date().default(() => new Date()),
@@ -42,13 +39,10 @@ export const notesRouter = createTRPCRouter({
   update: protectedProcedure
     .input(
       z.object({
-        id: z.string().cuid(),
+        id: z.string().cuid2(),
         title: z.string().nullable().optional(),
         description: z.string().nullable().optional(),
-        color: z
-          .string()
-          .regex(colorRegExp)
-          .optional(),
+        color: z.string().regex(hexColorRegExp).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -66,7 +60,7 @@ export const notesRouter = createTRPCRouter({
   trash: protectedProcedure
     .input(
       z.object({
-        id: z.string().cuid(),
+        id: z.string().cuid2(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -82,7 +76,7 @@ export const notesRouter = createTRPCRouter({
   deleteOneTrashed: protectedProcedure
     .input(
       z.object({
-        id: z.string().cuid(),
+        id: z.string().cuid2(),
       })
     )
     .mutation(async ({ ctx, input }) => {
