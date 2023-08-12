@@ -147,8 +147,7 @@ function HomeContent() {
   )
 }
 
-const Home: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (props) => {
-  const session = useSession()
+export default function HomePage(props: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>>) {
   return (
     <>
       <Head>
@@ -159,5 +158,3 @@ const Home: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
     </>
   )
 }
-
-export default Home

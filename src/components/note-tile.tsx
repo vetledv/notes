@@ -4,7 +4,7 @@ interface NoteProps extends React.HTMLAttributes<HTMLDivElement> {
   note: Note
 }
 
-export const NoteTile: React.FC<NoteProps> = ({ note, ...props }) => {
+export function NoteTile({ note, ...props }: NoteProps) {
   return (
     <div
       key={note.id}
