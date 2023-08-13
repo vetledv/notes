@@ -7,7 +7,7 @@ import { createTRPCRouter } from '~/server/api/trpc'
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  notes: notesRouter,
+	notes: notesRouter
 })
 
 // export type definition of API

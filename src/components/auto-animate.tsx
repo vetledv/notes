@@ -1,15 +1,15 @@
-import { useAutoAnimate } from '@formkit/auto-animate/react'
 import { HTMLAttributes } from 'react'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 
-interface Props extends HTMLAttributes<HTMLElement> {
-  as?: React.ElementType
+type AutoAnimateProps = HTMLAttributes<HTMLElement> & {
+	as?: React.ElementType
 }
 
-export const AutoAnimate: React.FC<Props> = ({ as: Card = 'div', children, ...props }) => {
-  const [parent] = useAutoAnimate()
-  return (
-    <Card {...props} ref={parent}>
-      {children}
-    </Card>
-  )
+export function AutoAnimate({ as: Card = 'div', children, ...props }: AutoAnimateProps) {
+	const [parent] = useAutoAnimate()
+	return (
+		<Card {...props} ref={parent}>
+			{children}
+		</Card>
+	)
 }
