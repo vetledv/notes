@@ -14,7 +14,7 @@ export const SideNav = ({ children }: { children: React.ReactNode }) => {
 		<nav
 			className={cn(
 				sideNavOpen ? 'w-64 after:min-w-[256px]' : 'w-14 min-w-[56px]',
-				'flex h-full flex-col border-r transition-width'
+				'relative flex h-full flex-col border-r transition-width'
 			)}>
 			<Button
 				onClick={() => setSideNavOpen(!sideNavOpen)}
