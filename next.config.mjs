@@ -8,11 +8,12 @@
 const config = {
   reactStrictMode: true,
   images: {
-    domains: ['cdn.discordapp.com'],
-  },
-  i18n: {
-    locales: ['en'],
-    defaultLocale: 'en',
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: 'cdn.discordapp.com'
+      }
+    ]
   },
 }
 export default config

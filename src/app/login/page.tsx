@@ -1,7 +1,5 @@
 import { SignInButton } from '~/app/login/sign-in-button'
 
-export const runtime = 'edge'
-
 export default function Login() {
 	return (
 		<main className='testing flex h-screen flex-col items-center justify-center gap-4'>
