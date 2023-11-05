@@ -1,3 +1,5 @@
+'use client'
+
 import { useRef, useState } from 'react'
 import { Note } from '@prisma/client'
 import { HexColorPicker } from 'react-colorful'
@@ -6,7 +8,7 @@ import { FaTrash } from 'react-icons/fa'
 
 import { Button } from './button'
 import { useClickOutside } from '~/hooks/use-click-outside'
-import { api } from '~/utils/api'
+import { api } from '~/trpc/react'
 import { NoteFilters } from '~/utils/note-filter'
 
 interface EditorProps {
@@ -15,7 +17,7 @@ interface EditorProps {
 }
 
 export const NoteEditor: React.FC<EditorProps> = ({ note, onClose }) => {
-	const tctx = api.useContext()
+	const tctx = api.useUtils()
 
 	const { mutate: deleteNote } = api.notes.deleteOneTrashed.useMutation({
 		onMutate: ({ id }) => {

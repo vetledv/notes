@@ -7,7 +7,7 @@ const hexColorRegExp = new RegExp(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
 
 export const notesRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
-		return await ctx.prisma.note.findMany({
+		return await ctx.db.note.findMany({
 			where: {
 				userId: ctx.session.user.id
 			},
@@ -29,7 +29,7 @@ export const notesRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			return await ctx.prisma.note.create({
+			return await ctx.db.note.create({
 				data: {
 					userId: ctx.session.user.id,
 					status: input.status || 'IN_PROGRESS',
@@ -47,7 +47,7 @@ export const notesRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			return await ctx.prisma.note.update({
+			return await ctx.db.note.update({
 				where: {
 					id: input.id
 				},
@@ -65,7 +65,7 @@ export const notesRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			return await ctx.prisma.note.update({
+			return await ctx.db.note.update({
 				where: {
 					id: input.id
 				},
@@ -81,14 +81,14 @@ export const notesRouter = createTRPCRouter({
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
-			return await ctx.prisma.note.delete({
+			return await ctx.db.note.delete({
 				where: {
 					id: input.id
 				}
 			})
 		}),
 	deleteAllTrashed: protectedProcedure.mutation(async ({ ctx }) => {
-		return await ctx.prisma.note.deleteMany({
+		return await ctx.db.note.deleteMany({
 			where: {
 				userId: ctx.session.user.id,
 				status: NoteFilters.TRASHED

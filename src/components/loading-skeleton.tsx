@@ -1,3 +1,5 @@
+'use client'
+
 import { BiMenuAltLeft, BiSearchAlt } from 'react-icons/bi'
 import { HiOutlineTrash } from 'react-icons/hi'
 import { MdLogout } from 'react-icons/md'

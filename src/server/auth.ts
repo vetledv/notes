@@ -1,10 +1,9 @@
-import { type GetServerSidePropsContext } from 'next'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { getServerSession, type NextAuthOptions } from 'next-auth'
 import DiscordProvider from 'next-auth/providers/discord'
 
 import { env } from '~/env.mjs'
-import { prisma } from '~/server/db'
+import { db } from '~/server/db'
 
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
@@ -12,7 +11,7 @@ import { prisma } from '~/server/db'
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
-	adapter: PrismaAdapter(prisma),
+	adapter: PrismaAdapter(db),
 	providers: [
 		DiscordProvider({
 			clientId: env.DISCORD_CLIENT_ID,
@@ -20,13 +19,13 @@ export const authOptions: NextAuthOptions = {
 		})
 	],
 	callbacks: {
-		// Include user.id on session
-		session({ session, user }) {
-			if (session.user) {
-				session.user.id = user.id
+		session: ({ session, user }) => ({
+			...session,
+			user: {
+				...session.user,
+				id: user.id
 			}
-			return session
-		}
+		})
 	},
 	pages: {
 		signIn: '/login'
@@ -38,9 +37,4 @@ export const authOptions: NextAuthOptions = {
  *
  * @see https://next-auth.js.org/configuration/nextjs
  */
-export const getServerAuthSession = (ctx: {
-	req: GetServerSidePropsContext['req']
-	res: GetServerSidePropsContext['res']
-}) => {
-	return getServerSession(ctx.req, ctx.res, authOptions)
-}
+export const getServerAuthSession = () => getServerSession(authOptions)

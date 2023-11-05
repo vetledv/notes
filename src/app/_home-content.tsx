@@ -1,9 +1,9 @@
+'use client'
+
 import { useState } from 'react'
-import type { GetServerSidePropsContext, InferGetServerSidePropsType, NextPage } from 'next'
-import Head from 'next/head'
 import { createId } from '@paralleldrive/cuid2'
-import type { Note } from '@prisma/client'
-import { useSession } from 'next-auth/react'
+import { type Note } from '@prisma/client'
+import { Session } from 'next-auth'
 import { HiOutlineTrash } from 'react-icons/hi'
 import { TbEdit, TbNotes } from 'react-icons/tb'
 
@@ -14,39 +14,18 @@ import { NoteEditor } from '~/components/note-editor'
 import { NoteTile } from '~/components/note-tile'
 import { SideNav } from '~/components/sidenav'
 import { useWindowResize } from '~/hooks/use-window-resize'
-import { getServerAuthSession } from '~/server/auth'
-import { api } from '~/utils/api'
-import { NoteFilters, type NoteFilter } from '~/utils/note-filter'
+import { api } from '~/trpc/react'
+import { NoteFilter, NoteFilters } from '~/utils/note-filter'
 
-export async function getServerSideProps(ctx: GetServerSidePropsContext) {
-	const session = await getServerAuthSession(ctx)
-	if (!session) {
-		return {
-			redirect: {
-				destination: '/login',
-				permanent: false
-			}
-		}
-	}
-	return {
-		props: {
-			session: session
-		}
-	}
-}
+export function HomeContent({ session }: { session: Session }) {
+	const tctx = api.useUtils()
 
-function HomeContent() {
-	const session = useSession()
-	const tctx = api.useContext()
-
-	const notesQuery = api.notes.getAll.useQuery(undefined, {
-		enabled: session.status === 'authenticated'
-	})
+	const notesQuery = api.notes.getAll.useQuery()
 
 	const createTodo = api.notes.create.useMutation({
 		onMutate(variables) {
 			tctx.notes.getAll.cancel()
-			if (!session.data?.user.id) {
+			if (!session.user.id) {
 				throw new Error('User not authenticated')
 			}
 			const newNote = {
@@ -55,7 +34,7 @@ function HomeContent() {
 				status: NoteFilters.IN_PROGRESS,
 				createdAt: new Date(),
 				updatedAt: new Date(),
-				userId: session.data.user.id
+				userId: session.user.id
 			} satisfies Note
 
 			tctx.notes.getAll.setData(undefined, (oldData) => {
@@ -78,20 +57,8 @@ function HomeContent() {
 	const [activeNote, setActiveNote] = useState<string | null>(null)
 	const [noteFilter, setNoteFilter] = useState<NoteFilter>(NoteFilters.IN_PROGRESS)
 
-	const handleCreateTodo = () => {
-		createTodo.mutate({
-			id: createId(),
-			title: 'New Note',
-			description: '',
-			color: '#D8E2DC',
-			status: NoteFilters.IN_PROGRESS,
-			createdAt: new Date(),
-			updatedAt: new Date()
-		})
-	}
-
 	if (notesQuery.isError) return <div>Failed to load notes: {notesQuery.error.message}</div>
-	if (notesQuery.isLoading) return <LoadingSkeleton />
+	if (notesQuery.isLoading || !notesQuery.data) return <LoadingSkeleton />
 
 	return (
 		<div
@@ -116,7 +83,20 @@ function HomeContent() {
 			<aside className='relative flex h-full w-full flex-col md:w-80 md:min-w-[320px] md:max-w-xs md:border-r lg:w-96 lg:min-w-[384px] lg:max-w-sm'>
 				<div className='flex items-center justify-between border-b p-2'>
 					<p className='w-full text-center'>{noteFilter === NoteFilters.IN_PROGRESS ? 'My notes' : 'Trash'}</p>
-					<Button className='w-fit bg-transparent px-2 py-2' disabled={createTodo.isLoading} onClick={handleCreateTodo}>
+					<Button
+						className='w-fit bg-transparent px-2 py-2'
+						disabled={createTodo.isLoading}
+						onClick={() => {
+							createTodo.mutate({
+								id: createId(),
+								title: 'New Note',
+								description: '',
+								color: '#D8E2DC',
+								status: NoteFilters.IN_PROGRESS,
+								createdAt: new Date(),
+								updatedAt: new Date()
+							})
+						}}>
 						<TbEdit className='h-6 w-6' />
 					</Button>
 				</div>
@@ -145,17 +125,5 @@ function HomeContent() {
 					<NoteEditor key={note.id} note={note} onClose={() => setActiveNote(null)} />
 				))}
 		</div>
-	)
-}
-
-export default function HomePage(props: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>>) {
-	return (
-		<>
-			<Head>
-				<title>Todo Notes</title>
-				<meta name='description' content='Make todo post-it notes' />
-			</Head>
-			<HomeContent />
-		</>
 	)
 }
