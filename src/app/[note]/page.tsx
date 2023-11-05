@@ -19,6 +19,9 @@ export default function NotePage(props: NotePageProps) {
 
 async function NotePageContent({ id }: { id: string }) {
 	const session = await auth()
+	if (!session) {
+		return null
+	}
 	const note = await api.notes.getAll.query()
 	if (!note) {
 		return redirect('/')
