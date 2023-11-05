@@ -61,11 +61,7 @@ export function HomeContent({ session }: { session: Session }) {
 	if (notesQuery.isLoading || !notesQuery.data) return <LoadingSkeleton />
 
 	return (
-		<div
-			style={{
-				height: windowSize.height
-			}}
-			className='box-border flex w-full overflow-hidden'>
+		<div style={{ height: windowSize.height }} className='box-border flex w-full overflow-hidden'>
 			<SideNav>
 				<Button
 					onClick={() => setNoteFilter(NoteFilters.IN_PROGRESS)}

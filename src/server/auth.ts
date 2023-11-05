@@ -1,19 +1,19 @@
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
-import { getServerSession, type NextAuthOptions } from 'next-auth'
-import DiscordProvider from 'next-auth/providers/discord'
+import NextAuth from 'next-auth'
+import Discord from 'next-auth/providers/discord'
 
 import { env } from '~/env.mjs'
 import { db } from '~/server/db'
 
-/**
- * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
- *
- * @see https://next-auth.js.org/configuration/options
- */
-export const authOptions: NextAuthOptions = {
+export const {
+	auth,
+	handlers: { GET, POST },
+	signIn,
+	signOut
+} = NextAuth({
 	adapter: PrismaAdapter(db),
 	providers: [
-		DiscordProvider({
+		Discord({
 			clientId: env.DISCORD_CLIENT_ID,
 			clientSecret: env.DISCORD_CLIENT_SECRET
 		})
@@ -30,11 +30,4 @@ export const authOptions: NextAuthOptions = {
 	pages: {
 		signIn: '/login'
 	}
-}
-
-/**
- * Wrapper for `getServerSession` so that you don't need to import the `authOptions` in every file.
- *
- * @see https://next-auth.js.org/configuration/nextjs
- */
-export const getServerAuthSession = () => getServerSession(authOptions)
+})
