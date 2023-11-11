@@ -1,3 +1,5 @@
+'use client'
+
 import { Button } from '~/components/button'
 import { api } from '~/trpc/react'
 import { NoteFilters } from '~/utils/note-filter'
